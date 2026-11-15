@@ -3,14 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pro HTML Editor & Sandbox</title>
-  
-  <!-- External Libraries (Beautify only) -->
+  <title>Pro HTML Editor &amp; Sandbox</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-html.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-css.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
-
-  <!-- All Styles are now Vanilla CSS, embedded in the page -->
   <style>
     :root {
       --bg-primary: #f3f4f6; --bg-secondary: #ffffff; --bg-tertiary: #e5e7eb;
@@ -23,10 +19,7 @@
       --text-primary: #f9fafb; --text-secondary: #d1d5db; --border-color: #4b5563;
       --editor-bg: #000000; --editor-text: #e5e7eb; --editor-border: #6b7280;
     }
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; margin: 0;
-      font-size: 13px; background-color: var(--bg-primary); color: var(--text-primary);
-    }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; margin: 0; font-size: 13px; background-color: var(--bg-primary); color: var(--text-primary); }
     .container { max-width: 1400px; margin: 0 auto; padding: 0.5rem; }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
     header h1 { font-size: 1.1rem; font-weight: 600; }
@@ -35,23 +28,13 @@
     .header-actions a:hover { color: var(--accent-color); }
     main { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
     @media (min-width: 1024px) { main { grid-template-columns: 1fr 1fr; } }
-    .card {
-      background-color: var(--bg-secondary); padding: 0.75rem; border-radius: 0.375rem;
-      box-shadow: 0 2px 4px var(--shadow-color); display: flex; flex-direction: column;
-    }
+    .card { background-color: var(--bg-secondary); padding: 0.75rem; border-radius: 0.375rem; box-shadow: 0 2px 4px var(--shadow-color); display: flex; flex-direction: column; }
     .card h2 { font-size: 1rem; font-weight: 600; margin: 0 0 0.6rem 0; }
-    textarea, input[type="text"], select {
-      width: 100%; padding: 0.4rem; font-family: 'Consolas', monospace; font-size: 0.75rem;
-      border: 1px solid var(--border-color); border-radius: 0.25rem;
-      background-color: var(--bg-tertiary); color: var(--text-primary); box-sizing: border-box;
-    }
+    textarea, input[type="text"], select, input[type="number"] { width: 100%; padding: 0.4rem; font-family: 'Consolas', monospace; font-size: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.25rem; background-color: var(--bg-tertiary); color: var(--text-primary); box-sizing: border-box; }
     #code-textarea, #foldable-view { height: 22rem; background-color: var(--editor-bg); color: var(--editor-text); border-color: var(--editor-border); }
     #code-textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent-color); outline-offset: 1px; }
     .button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.25rem; margin-top: 0.5rem; }
-    button {
-      padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 500; border: none;
-      border-radius: 0.25rem; color: #ffffff; cursor: pointer; transition: background-color 0.2s;
-    }
+    button { padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 500; border: none; border-radius: 0.25rem; color: #ffffff; cursor: pointer; transition: background-color 0.2s; }
     .btn-blue { background-color: #3b82f6; } .btn-blue:hover { background-color: #2563eb; }
     .btn-green { background-color: #10b981; } .btn-green:hover { background-color: #059669; }
     .btn-gray { background-color: #6b7280; } .btn-gray:hover { background-color: #4b5563; }
@@ -62,24 +45,17 @@
     .btn-teal { background-color: #14b8a6; } .btn-teal:hover { background-color: #0d9488; }
     .btn-full { grid-column: 1 / -1; }
     .tab-buttons { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 0.6rem; }
-    .tab-button {
-      padding: 0.4rem 0.6rem; cursor: pointer; border: none; background-color: transparent;
-      color: var(--text-secondary); font-weight: 600; font-size: 0.75rem;
-      border-bottom: 2px solid transparent; margin-bottom: -1px;
-    }
+    .tab-button { padding: 0.4rem 0.6rem; cursor: pointer; border: none; background-color: transparent; color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; border-bottom: 2px solid transparent; margin-bottom: -1px; }
     .tab-button.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
     .tab-content { display: none; flex-direction: column; gap: 0.6rem; }
     .tab-content.active { display: flex; }
     .tool-group { display: flex; flex-direction: column; gap: 0.4rem; }
     .tool-group-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 0.4rem; }
+    .tool-label { color: var(--text-secondary); font-size: 0.72rem; }
     .diff-card { flex-grow: 1; }
     .diff-container { flex-grow: 1; display: grid; grid-template-rows: 1fr 1fr; gap: 0.4rem; }
     .diff-container textarea { height: 100%; resize: vertical; }
-    #diff-output {
-      margin-top: 0.6rem; padding: 0.4rem; height: 12rem; overflow-y: auto;
-      background-color: var(--bg-primary); border-radius: 0.25rem; border: 1px solid var(--border-color);
-      font-family: 'Consolas', monospace; font-size: 0.7rem;
-    }
+    #diff-output { margin-top: 0.6rem; padding: 0.4rem; height: 12rem; overflow-y: auto; background-color: var(--bg-primary); border-radius: 0.25rem; border: 1px solid var(--border-color); font-family: 'Consolas', monospace; font-size: 0.7rem; }
     .diff-line { padding: 1px 4px; white-space: pre-wrap; word-break: break-all; }
     .diff-added { background-color: rgba(16, 185, 129, 0.1); }
     .diff-removed { background-color: rgba(239, 68, 68, 0.1); }
@@ -101,10 +77,9 @@
   </style>
 </head>
 <body>
-
   <div class="container">
     <header>
-      <h1>HTML Editor & Sandbox</h1>
+      <h1>HTML Editor &amp; Sandbox</h1>
       <div class="header-actions">
         <a href="https://ubuv6vvyv.github.io/home.html" target="_blank" rel="noopener noreferrer">Bugged Hall of Shame</a>
         <button id="theme-toggle" title="Toggle Theme">
@@ -113,7 +88,6 @@
         </button>
       </div>
     </header>
-
     <main>
       <div class="card">
         <h2>Code Editor</h2>
@@ -121,7 +95,7 @@
         <textarea id="code-textarea" placeholder="Paste your HTML, CSS, or JS code here..."></textarea>
         <div id="foldable-view"></div>
         <div class="button-grid">
-<button onclick="actions.openInNewTab()" class="btn-red btn-full">Preview</button>
+          <button onclick="actions.openInNewTab()" class="btn-red btn-full">Preview</button>
           <button onclick="actions.openFile()" class="btn-blue">Open</button>
           <button onclick="actions.saveFile()" class="btn-green">Save</button>
           <button onclick="actions.copy()" class="btn-gray">Copy</button>
@@ -130,89 +104,79 @@
           <button onclick="actions.beautify()" class="btn-indigo">Beautify</button>
           <button onclick="actions.minify()" class="btn-purple">Minify</button>
           <button onclick="actions.toggleFoldView()" class="btn-gray">Collapse</button>
-          
           <button onclick="actions.handleMultipleFiles()" class="btn-teal btn-full">Open Multiple</button>
         </div>
       </div>
-
       <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         <div class="card">
           <h2>Text Tools</h2>
           <div class="tab-buttons">
-            <button class="tab-button active" onclick="textTools.switchTab(event, 'find-replace')">Find & Replace</button>
+            <button class="tab-button active" onclick="textTools.switchTab(event, 'find-replace')">Find &amp; Replace</button>
             <button class="tab-button" onclick="textTools.switchTab(event, 'line-tools')">Line Tools</button>
             <button class="tab-button" onclick="textTools.switchTab(event, 'regex-tools')">Regex Tools</button>
           </div>
           <div id="find-replace" class="tab-content active"><div class="tool-group"><input type="text" id="find-input" placeholder="Find..."><input type="text" id="replace-input" placeholder="Replace with..."><div style="text-align: right; color: var(--text-secondary); font-size: 0.7rem;" id="match-count">0 matches</div><div class="tool-group-row"><button onclick="textTools.highlightMatches()" class="btn-blue">Highlight</button><button onclick="textTools.replaceNext()" class="btn-blue">Replace Next</button><button onclick="textTools.replaceAll()" class="btn-blue">Replace All</button></div></div></div>
-          <div id="line-tools" class="tab-content"><div class="tool-group"><input type="text" id="filter-input" placeholder="Filter lines containing..."><button onclick="textTools.filterLines()" class="btn-gray">Apply Filter</button><div class="tool-group-row"><button onclick="textTools.removeEmpty()" class="btn-gray">Remove Empty</button><button onclick="textTools.removeDuplicates()" class="btn-gray">Remove Duplicates</button></div></div></div>
+          <div id="line-tools" class="tab-content">
+            <div class="tool-group">
+              <input type="text" id="filter-input" placeholder="Filter lines containing...">
+              <button onclick="textTools.filterLines()" class="btn-gray">Apply Filter</button>
+              <div class="tool-group-row"><button onclick="textTools.removeEmpty()" class="btn-gray">Remove Empty</button><button onclick="textTools.removeDuplicates()" class="btn-gray">Remove Duplicates</button></div>
+              <div class="tool-group-row"><button onclick="textTools.trimLines()" class="btn-gray">Trim Lines</button><button onclick="textTools.sortLines()" class="btn-gray">Sort Lines</button></div>
+              <label class="tool-label" for="comment-language">Comment syntax to remove</label>
+              <select id="comment-language"><option value="html">HTML comments</option><option value="css">CSS comments</option><option value="js">JavaScript comments</option></select>
+              <button onclick="textTools.removeComments()" class="btn-gray">Remove Comments</button>
+              <label class="tool-label" for="flatten-depth">Flatten nested array depth</label>
+              <select id="flatten-depth"><option value="all">All levels</option><option value="1">1 level</option><option value="2">2 levels</option><option value="3">3 levels</option></select>
+              <div class="tool-group-row"><button onclick="textTools.flattenArray()" class="btn-indigo">Flatten Array</button><button onclick="textTools.jsonToCsv()" class="btn-indigo">JSON to CSV</button></div>
+              <div class="tool-group-row"><button onclick="textTools.jsonlToJson()" class="btn-indigo">JSONL to JSON</button><button onclick="textTools.jsonToJsonl()" class="btn-indigo">JSON to JSONL</button></div>
+              <div class="tool-group-row"><button onclick="textTools.csvToJson()" class="btn-indigo">CSV to JSON</button></div>
+              <div class="tool-label">JSON transforms expect valid JSON; CSV conversions use the first row as headers.</div>
+            </div>
+          </div>
           <div id="regex-tools" class="tab-content"><div class="tool-group"><select id="regex-template" onchange="textTools.applyRegexTemplate()"><option value="">Select Regex Template...</option><option value="cashconvert">CashConverters</option><option value="email">Email</option><option value="url">URL</option><option value="phone">Phone</option><option value="date">Date</option><option value="name">Name</option><option value="ipv4">IPv4</option><option value="hexcolor">Hex Color</option><option value="twitter">Twitter</option><option value="htmltag">HTML Tag</option></select><input type="text" id="regex-input" placeholder="Enter regex pattern"><div class="tool-group-row"><button onclick="textTools.extractMatches()" class="btn-purple">Extract</button><button onclick="textTools.removeMatches()" class="btn-purple">Remove</button></div></div></div>
         </div>
-        <div>
-<a>Ubuv6vvyv.github.io/Reorder%Text.html</a>
-
-        </div>
-        
-
+        <div><a href="https://Ubuv6vvyv.github.io/Reorder%Text.html">Ubuv6vvyv.github.io/Reorder%Text.html</a></div>
         <div class="card diff-card">
           <h2>Difference Checker</h2>
-          <div class="diff-container">
-            <textarea id="original-code" placeholder="Original Code"></textarea>
-            <textarea id="new-code" placeholder="New Code"></textarea>
-          </div>
+          <div class="diff-container"><textarea id="original-code" placeholder="Original Code"></textarea><textarea id="new-code" placeholder="New Code"></textarea></div>
           <button onclick="diffChecker.compare()" class="btn-green" style="width: 100%; margin-top: 0.6rem;">Compare</button>
           <div id="diff-output"></div>
         </div>
       </div>
     </main>
   </div>
-
   <div id="save-modal" class="modal"><div class="modal-content"><h3>Save File As</h3><input type="text" id="filename-input" placeholder="e.g., my-page.html" style="margin: 0.75rem 0;"><div class="modal-actions"><button id="cancel-save" class="btn-gray">Cancel</button><button id="confirm-save" class="btn-blue">Save</button></div></div></div>
   <div id="toast" class="toast"></div>
-
   <script>
     const elements = {
-      codeTextarea: document.getElementById('code-textarea'),
-      foldableView: document.getElementById('foldable-view'),
-      themeToggle: document.getElementById('theme-toggle'),
-      themeIconLight: document.getElementById('theme-icon-light'),
-      themeIconDark: document.getElementById('theme-icon-dark'),
-      html: document.documentElement,
-      toast: document.getElementById('toast'),
-      saveModal: document.getElementById('save-modal'),
-      filenameInput: document.getElementById('filename-input'),
-      confirmSaveBtn: document.getElementById('confirm-save'),
+      codeTextarea: document.getElementById('code-textarea'), foldableView: document.getElementById('foldable-view'),
+      themeToggle: document.getElementById('theme-toggle'), themeIconLight: document.getElementById('theme-icon-light'),
+      themeIconDark: document.getElementById('theme-icon-dark'), html: document.documentElement,
+      toast: document.getElementById('toast'), saveModal: document.getElementById('save-modal'),
+      filenameInput: document.getElementById('filename-input'), confirmSaveBtn: document.getElementById('confirm-save'),
       cancelSaveBtn: document.getElementById('cancel-save'),
-      diff: {
-        original: document.getElementById('original-code'),
-        modified: document.getElementById('new-code'),
-        output: document.getElementById('diff-output'),
-      },
+      diff: { original: document.getElementById('original-code'), modified: document.getElementById('new-code'), output: document.getElementById('diff-output') },
       textTools: {
-        find: document.getElementById('find-input'),
-        replace: document.getElementById('replace-input'),
-        filter: document.getElementById('filter-input'),
-        regexTemplate: document.getElementById('regex-template'),
-        regexInput: document.getElementById('regex-input'),
-        matchCount: document.getElementById('match-count'),
-        tabButtons: document.querySelectorAll('.tab-button'),
-        tabContents: document.querySelectorAll('.tab-content'),
+        find: document.getElementById('find-input'), replace: document.getElementById('replace-input'), filter: document.getElementById('filter-input'),
+        regexTemplate: document.getElementById('regex-template'), regexInput: document.getElementById('regex-input'),
+        matchCount: document.getElementById('match-count'), tabButtons: document.querySelectorAll('.tab-button'),
+        tabContents: document.querySelectorAll('.tab-content'), commentLanguage: document.getElementById('comment-language'),
+        flattenDepth: document.getElementById('flatten-depth'),
       },
       fileButtonsContainer: document.getElementById('file-buttons-container'),
     };
-
     let undoHistory = [''];
     let currentUndoIndex = 0;
     let foldViewActive = false;
 
-    // --- UTILITIES & CORE ACTIONS ---
     const utils = {
       showToast(message, type = 'success') {
         elements.toast.textContent = message;
         elements.toast.className = `toast show ${type === 'success' ? 'btn-green' : 'btn-red'}`;
-        setTimeout(() => { elements.toast.classList.remove('show'); }, 2500);
+        setTimeout(() => elements.toast.classList.remove('show'), 2500);
       },
-      minifyJS: c => c.replace(/\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*$/gm, "").replace(/\s+/g, " ").trim(),
-      minifyCSS: c => c.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s{2,}/g, " ").replace(/; /g, ";").replace(/: /g, ":").trim(),
+      minifyJS: c => c.replace(/\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*$/gm, '').replace(/\s+/g, ' ').trim(),
+      minifyCSS: c => c.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s{2,}/g, ' ').replace(/; /g, ';').replace(/: /g, ':').trim(),
     };
 
     const actions = {
@@ -223,239 +187,285 @@
         elements.themeIconDark.style.display = theme === 'dark' ? 'block' : 'none';
       },
       openFile() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.html,.js,.css,.txt';
+        const input = document.createElement('input'); input.type = 'file'; input.accept = '.html,.js,.css,.txt';
         input.onchange = e => {
           const file = e.target.files[0];
           if (file) {
             const reader = new FileReader();
-            reader.onload = e => {
-              elements.codeTextarea.value = e.target.result;
-              undoHistory = [e.target.result];
-              currentUndoIndex = 0;
-            };
+            reader.onload = e => { elements.codeTextarea.value = e.target.result; undoHistory = [e.target.result]; currentUndoIndex = 0; };
             reader.readAsText(file);
           }
         };
         input.click();
       },
       handleMultipleFiles() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.accept = '.html,.js,.css,.txt';
+        const input = document.createElement('input'); input.type = 'file'; input.multiple = true; input.accept = '.html,.js,.css,.txt';
         input.onchange = e => {
-            elements.fileButtonsContainer.innerHTML = "";
-            Array.from(e.target.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const button = document.createElement("button");
-                    button.textContent = file.name;
-                    button.onclick = () => actions.executeCodeInNewTab(e.target.result);
-                    elements.fileButtonsContainer.appendChild(button);
-                };
-                reader.readAsText(file);
-            });
+          elements.fileButtonsContainer.innerHTML = '';
+          Array.from(e.target.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+              const content = e.target.result;
+              const button = document.createElement('button'); button.textContent = file.name;
+              button.onclick = () => actions.executeCodeInNewTab(content);
+              elements.fileButtonsContainer.appendChild(button);
+            };
+            reader.readAsText(file);
+          });
         };
         input.click();
       },
       executeCodeInNewTab(content) {
         if (!content) return;
-        try {
-            const url = URL.createObjectURL(new Blob([content], { type: "text/html" }));
-            window.open(url, "_blank");
-        } catch(e) { utils.showToast("Could not execute code.", "error"); }
+        try { const url = URL.createObjectURL(new Blob([content], { type: 'text/html' })); window.open(url, '_blank'); }
+        catch (e) { utils.showToast('Could not execute code.', 'error'); }
       },
       saveFile() {
-        elements.filenameInput.value = 'index.html';
-        elements.saveModal.style.display = 'flex';
-        elements.filenameInput.focus();
+        elements.filenameInput.value = 'index.html'; elements.saveModal.style.display = 'flex'; elements.filenameInput.focus();
         const handleSave = () => {
           const code = elements.codeTextarea.value;
           let filename = elements.filenameInput.value.trim() || 'index.html';
           if (!/\.(html|htm|txt|css|js)$/i.test(filename)) filename += '.html';
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(a.href);
-          closeModal();
-          utils.showToast(`File saved as ${filename}`);
+          const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' })); a.download = filename; a.click(); URL.revokeObjectURL(a.href); closeModal(); utils.showToast(`File saved as ${filename}`);
         };
-        const closeModal = () => {
-          elements.saveModal.style.display = 'none';
-          elements.confirmSaveBtn.removeEventListener('click', handleSave);
-          elements.cancelSaveBtn.removeEventListener('click', closeModal);
-        };
-        elements.confirmSaveBtn.addEventListener('click', handleSave);
-        elements.cancelSaveBtn.addEventListener('click', closeModal);
+        const closeModal = () => { elements.saveModal.style.display = 'none'; elements.confirmSaveBtn.removeEventListener('click', handleSave); elements.cancelSaveBtn.removeEventListener('click', closeModal); };
+        elements.confirmSaveBtn.addEventListener('click', handleSave); elements.cancelSaveBtn.addEventListener('click', closeModal);
       },
       copy: () => navigator.clipboard.writeText(elements.codeTextarea.value).then(() => utils.showToast('Copied!'), () => utils.showToast('Copy failed!', 'error')),
       clear: () => { elements.codeTextarea.value = ''; undoHistory = ['']; currentUndoIndex = 0; },
-      undo() {
-        if (currentUndoIndex > 0) {
-            currentUndoIndex--;
-            elements.codeTextarea.value = undoHistory[currentUndoIndex];
-        }
-      },
+      undo() { if (currentUndoIndex > 0) { currentUndoIndex--; elements.codeTextarea.value = undoHistory[currentUndoIndex]; } },
       beautify: () => elements.codeTextarea.value && (elements.codeTextarea.value = html_beautify(elements.codeTextarea.value, { indent_size: 2, space_in_empty_paren: true })),
       minify() {
         if (!elements.codeTextarea.value) return;
         try {
-            const doc = new DOMParser().parseFromString(elements.codeTextarea.value, 'text/html');
-            doc.querySelectorAll('script:not([src])').forEach(s => s.textContent = utils.minifyJS(s.textContent));
-            doc.querySelectorAll('style').forEach(s => s.textContent = utils.minifyCSS(s.textContent));
-            elements.codeTextarea.value = `<!DOCTYPE html>${doc.documentElement.outerHTML.replace(/\s{2,}/g, ' ')}`;
+          const doc = new DOMParser().parseFromString(elements.codeTextarea.value, 'text/html');
+          doc.querySelectorAll('script:not([src])').forEach(s => s.textContent = utils.minifyJS(s.textContent));
+          doc.querySelectorAll('style').forEach(s => s.textContent = utils.minifyCSS(s.textContent));
+          elements.codeTextarea.value = `<!DOCTYPE html>${doc.documentElement.outerHTML.replace(/\s{2,}/g, ' ')}`;
         } catch (e) { utils.showToast('Minification failed.', 'error'); }
       },
       openInNewTab: () => actions.executeCodeInNewTab(elements.codeTextarea.value),
       toggleFoldView() {
         foldViewActive = !foldViewActive;
-        elements.codeTextarea.style.display = foldViewActive ? "none" : "block";
-        elements.foldableView.style.display = foldViewActive ? "block" : "none";
+        elements.codeTextarea.style.display = foldViewActive ? 'none' : 'block'; elements.foldableView.style.display = foldViewActive ? 'block' : 'none';
         if (foldViewActive) {
-            try {
-                const doc = new DOMParser().parseFromString(elements.codeTextarea.value, "text/html");
-                elements.foldableView.innerHTML = "";
-                elements.foldableView.appendChild(this.renderFoldableNode(doc.documentElement));
-            } catch(e) { utils.showToast('Could not parse HTML for folding.', 'error'); }
+          try { const doc = new DOMParser().parseFromString(elements.codeTextarea.value, 'text/html'); elements.foldableView.innerHTML = ''; elements.foldableView.appendChild(this.renderFoldableNode(doc.documentElement)); }
+          catch (e) { utils.showToast('Could not parse HTML for folding.', 'error'); }
         }
       },
       renderFoldableNode(node) {
-        if (node.nodeType === 1) { // ELEMENT_NODE
-            const el = document.createElement("div");
-            el.className = "foldable-node";
-            const hasChildren = Array.from(node.childNodes).some(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
-            let tagText = `<${node.tagName.toLowerCase()}`;
-            for (let attr of node.attributes) { tagText += ` ${attr.name}="${attr.value}"`; }
-            tagText += ">";
-            el.innerHTML = `<div class="fold-toggle">${hasChildren ? "[-]" : "&nbsp;"}</div><span>${tagText}</span>`;
-            const childContainer = document.createElement("div");
-            if (hasChildren) {
-              for (let child of node.childNodes) {
-                const childEl = this.renderFoldableNode(child);
-                if (childEl) childContainer.appendChild(childEl);
-              }
-            }
-            el.appendChild(childContainer);
-            if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i.test(node.tagName)) {
-                el.innerHTML += `</${node.tagName.toLowerCase()}>`;
-            }
-            el.firstElementChild.onclick = e => {
-                e.stopPropagation();
-                const isHidden = childContainer.style.display === "none";
-                childContainer.style.display = isHidden ? "" : "none";
-                e.target.innerHTML = isHidden ? "[-]" : "[+]";
-            };
-            return el;
+        if (node.nodeType === 1) {
+          const el = document.createElement('div'); el.className = 'foldable-node';
+          const hasChildren = Array.from(node.childNodes).some(n => n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim()));
+          let tagText = `<${node.tagName.toLowerCase()}`;
+          for (const attr of node.attributes) tagText += ` ${attr.name}="${attr.value}"`;
+          tagText += '>';
+          el.innerHTML = `<div class="fold-toggle">${hasChildren ? '[-]' : '&nbsp;'}</div><span>${tagText}</span>`;
+          const childContainer = document.createElement('div');
+          if (hasChildren) for (const child of node.childNodes) { const childEl = this.renderFoldableNode(child); if (childEl) childContainer.appendChild(childEl); }
+          el.appendChild(childContainer);
+          if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i.test(node.tagName)) el.innerHTML += `</${node.tagName.toLowerCase()}>`;
+          el.firstElementChild.onclick = e => { e.stopPropagation(); const isHidden = childContainer.style.display === 'none'; childContainer.style.display = isHidden ? '' : 'none'; e.target.innerHTML = isHidden ? '[-]' : '[+]'; };
+          return el;
         }
-        if (node.nodeType === 3 && node.textContent.trim()) return Object.assign(document.createElement("div"), { className: "foldable-text", textContent: node.textContent.trim() });
-        if (node.nodeType === 8) return Object.assign(document.createElement("div"), { className: "foldable-comment", textContent: `<!-- ${node.textContent.trim()} -->` });
+        if (node.nodeType === 3 && node.textContent.trim()) return Object.assign(document.createElement('div'), { className: 'foldable-text', textContent: node.textContent.trim() });
+        if (node.nodeType === 8) return Object.assign(document.createElement('div'), { className: 'foldable-comment', textContent: `<!-- ${node.textContent.trim()} -->` });
         return null;
       }
     };
 
-    // --- TEXT TOOLS ---
     const textTools = {
-      regexTemplates: { email: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", cashconvert: "https:\/\/www\.cashconverters\.com\.au\/globalassets\/valuationcertificates\/valuation-certificate-[0-9]+\.pdf", url: "https?:\\/\\/[\\w\\-\\.]+\\.[a-zA-Z]{2,}[\\w\\-\\._~:\\/?#[\\]@!\\$&'\\(\\)\\*\\+,;=]*", phone: "\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}", date: "\\d{4}-\\d{2}-\\d{2}|\\d{1,2}/\\d{1,2}/\\d{2,4}", name: "\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+\\b", ipv4: "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b", hexcolor: "#(?:[0-9a-fA-F]{3}){1,2}\\b", twitter: "@[A-Za-z0-9_]{1,15}\\b", htmltag: "<\\/?[a-zA-Z]+[^>]*>" },
+      regexTemplates: { email: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', cashconvert: 'https:\\/\\/www\\.cashconverters\\.com\\.au\\/globalassets\\/valuationcertificates\\/valuation-certificate-[0-9]+\\.pdf', url: 'https?:\\/\\/[\\w\\-\\.]+\\.[a-zA-Z]{2,}[\\w\\-\\._~:\\/?#[\\]@!\\$&\\'\\(\\)\\*\\+,;=]*', phone: '\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}', date: '\\d{4}-\\d{2}-\\d{2}|\\d{1,2}/\\d{1,2}/\\d{2,4}', name: '\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+\\b', ipv4: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b', hexcolor: '#(?:[0-9a-fA-F]{3}){1,2}\\b', twitter: '@[A-Za-z0-9_]{1,15}\\b', htmltag: '<\\/?[a-zA-Z]+[^>]*>' },
       switchTab(event, tabName) {
-        elements.textTools.tabContents.forEach(c => c.classList.remove('active'));
-        elements.textTools.tabButtons.forEach(b => b.classList.remove('active'));
-        document.getElementById(tabName).classList.add('active');
-        event.currentTarget.classList.add('active');
+        elements.textTools.tabContents.forEach(c => c.classList.remove('active')); elements.textTools.tabButtons.forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active'); event.currentTarget.classList.add('active');
       },
       highlightMatches() {
         const findText = elements.textTools.find.value;
         if (!findText) return elements.textTools.matchCount.textContent = '0 matches';
-        try {
-            const count = (elements.codeTextarea.value.match(new RegExp(findText, 'g')) || []).length;
-            elements.textTools.matchCount.textContent = `${count} ${count === 1 ? 'match' : 'matches'}`;
-        } catch (e) { elements.textTools.matchCount.textContent = 'Invalid Regex'; }
+        try { const count = (elements.codeTextarea.value.match(new RegExp(findText, 'g')) || []).length; elements.textTools.matchCount.textContent = `${count} ${count === 1 ? 'match' : 'matches'}`; }
+        catch (e) { elements.textTools.matchCount.textContent = 'Invalid Regex'; }
       },
       replaceNext() {
-        const { value: findText } = elements.textTools.find;
-        if (!findText) return;
-        const { selectionEnd } = elements.codeTextarea;
-        const nextMatch = elements.codeTextarea.value.substring(selectionEnd).search(findText);
-        if (nextMatch !== -1) {
-            const index = selectionEnd + nextMatch;
-            elements.codeTextarea.setRangeText(elements.textTools.replace.value, index, index + findText.length);
-            elements.codeTextarea.focus();
-            this.highlightMatches();
-        } else { utils.showToast('No more matches found.', 'info'); }
+        const { value: findText } = elements.textTools.find; if (!findText) return;
+        const { selectionEnd } = elements.codeTextarea; const nextMatch = elements.codeTextarea.value.substring(selectionEnd).search(findText);
+        if (nextMatch !== -1) { const index = selectionEnd + nextMatch; elements.codeTextarea.setRangeText(elements.textTools.replace.value, index, index + findText.length); elements.codeTextarea.focus(); this.highlightMatches(); }
+        else utils.showToast('No more matches found.', 'info');
       },
       replaceAll() {
-        const { value: findText } = elements.textTools.find;
-        if (!findText) return;
-        try {
-            elements.codeTextarea.value = elements.codeTextarea.value.replace(new RegExp(findText, 'g'), elements.textTools.replace.value);
-            this.highlightMatches();
-        } catch (e) { utils.showToast('Invalid find pattern (regex).', 'error'); }
+        const { value: findText } = elements.textTools.find; if (!findText) return;
+        try { elements.codeTextarea.value = elements.codeTextarea.value.replace(new RegExp(findText, 'g'), elements.textTools.replace.value); this.highlightMatches(); }
+        catch (e) { utils.showToast('Invalid find pattern (regex).', 'error'); }
       },
-      filterLines: () => {
-        const filterText = elements.textTools.filter.value;
-        if (filterText) elements.codeTextarea.value = elements.codeTextarea.value.split('\n').filter(line => line.includes(filterText)).join('\n');
-      },
+      filterLines: () => { const filterText = elements.textTools.filter.value; if (filterText) elements.codeTextarea.value = elements.codeTextarea.value.split('\n').filter(line => line.includes(filterText)).join('\n'); },
       removeEmpty: () => elements.codeTextarea.value = elements.codeTextarea.value.split('\n').filter(line => line.trim()).join('\n'),
       removeDuplicates: () => elements.codeTextarea.value = [...new Set(elements.codeTextarea.value.split('\n'))].join('\n'),
-      applyRegexTemplate: () => elements.textTools.regexInput.value = textTools.regexTemplates[elements.textTools.regexTemplate.value] || "",
-      runRegex(action) {
-        const pattern = elements.textTools.regexInput.value;
-        if (!pattern) return;
+      trimLines: () => elements.codeTextarea.value = elements.codeTextarea.value.split(/\r?\n/).map(line => line.trim()).join('\n'),
+      sortLines() {
+        const lines = elements.codeTextarea.value.split(/\r?\n/);
+        lines.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        elements.codeTextarea.value = lines.join('\n');
+      },
+      removeComments() {
+        const source = elements.codeTextarea.value;
+        const language = elements.textTools.commentLanguage.value;
+        if (language === 'html') {
+          elements.codeTextarea.value = source.replace(/<!--[\s\S]*?-->/g, '');
+          return;
+        }
+        // Strip JS/CSS line and block comments while preserving quoted strings and template literals.
+        let output = '', quote = '', escaped = false;
+        for (let i = 0; i < source.length; i++) {
+          const ch = source[i], next = source[i + 1];
+          if (quote) {
+            output += ch;
+            if (escaped) escaped = false;
+            else if (ch === '\\') escaped = true;
+            else if (ch === quote) quote = '';
+            continue;
+          }
+          if (ch === '"' || ch === "'" || ch === '`') { quote = ch; output += ch; continue; }
+          if (ch === '/' && next === '*') {
+            const end = source.indexOf('*/', i + 2);
+            if (end === -1) throw new Error('Unclosed block comment. Nothing was changed.');
+            i = end + 1;
+            continue;
+          }
+          if (ch === '/' && next === '/') {
+            while (i < source.length && source[i] !== '\n' && source[i] !== '\r') i++;
+            if (i < source.length) output += source[i];
+            continue;
+          }
+          output += ch;
+        }
+        elements.codeTextarea.value = output;
+      },
+      applyTransform(transform, successMessage) {
         try {
-            const regex = new RegExp(pattern, 'g');
-            if (action === 'extract') {
-                const matches = elements.codeTextarea.value.match(regex);
-                elements.codeTextarea.value = matches ? matches.join('\n') : '';
-                utils.showToast(matches ? `Extracted ${matches.length} matches.` : 'No matches found.');
-            } else {
-                elements.codeTextarea.value = elements.codeTextarea.value.replace(regex, '');
-            }
+          const result = transform(elements.codeTextarea.value);
+          elements.codeTextarea.value = result;
+          utils.showToast(successMessage);
+        } catch (error) { utils.showToast(error.message || 'Could not transform input.', 'error'); }
+      },
+      flattenArray() {
+        this.applyTransform(source => {
+          const parsed = JSON.parse(source);
+          if (!Array.isArray(parsed)) throw new Error('Input must be a JSON array.');
+          const setting = elements.textTools.flattenDepth.value;
+          const maxDepth = setting === 'all' ? Infinity : Number(setting);
+          const flatten = (items, depth) => items.reduce((result, item) => {
+            if (Array.isArray(item) && depth < maxDepth) result.push(...flatten(item, depth + 1));
+            else result.push(item);
+            return result;
+          }, []);
+          return JSON.stringify(flatten(parsed, 0), null, 2);
+        }, 'Array flattened.');
+      },
+      flattenObject(value, prefix = '', result = {}) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          for (const [key, child] of Object.entries(value)) {
+            const path = prefix ? `${prefix}.${key}` : key;
+            if (child && typeof child === 'object' && !Array.isArray(child)) this.flattenObject(child, path, result);
+            else result[path] = Array.isArray(child) ? JSON.stringify(child) : child;
+          }
+        } else if (prefix) result[prefix] = value;
+        return result;
+      },
+      jsonToCsv() {
+        this.applyTransform(source => {
+          const rows = JSON.parse(source);
+          if (!Array.isArray(rows) || rows.some(row => !row || typeof row !== 'object' || Array.isArray(row))) throw new Error('Expected a JSON array of objects.');
+          const flattened = rows.map(row => this.flattenObject(row));
+          const headers = [...new Set(flattened.flatMap(row => Object.keys(row)))];
+          if (!headers.length) throw new Error('No object fields found to use as CSV columns.');
+          const cell = value => {
+            const text = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+            return `"${text.replace(/"/g, '""')}"`;
+          };
+          return [headers.map(cell).join(','), ...flattened.map(row => headers.map(header => cell(row[header])).join(','))].join('\r\n');
+        }, 'JSON converted to CSV.');
+      },
+      jsonlToJson() {
+        this.applyTransform(source => {
+          const values = [];
+          source.split(/\r?\n/).forEach((line, index) => {
+            if (!line.trim()) return;
+            try { values.push(JSON.parse(line)); }
+            catch (error) { throw new Error(`Invalid JSON on line ${index + 1}: ${error.message}`); }
+          });
+          return JSON.stringify(values, null, 2);
+        }, 'JSONL converted to JSON.');
+      },
+      jsonToJsonl() {
+        this.applyTransform(source => {
+          const parsed = JSON.parse(source);
+          if (!Array.isArray(parsed)) throw new Error('Input must be a JSON array.');
+          return parsed.map(value => JSON.stringify(value)).join('\n');
+        }, 'JSON converted to JSONL.');
+      },
+      parseCsv(source) {
+        const rows = [];
+        let row = [], field = '', quoted = false;
+        source = source.replace(/^\uFEFF/, '');
+        for (let i = 0; i < source.length; i++) {
+          const ch = source[i];
+          if (quoted) {
+            if (ch === '"' && source[i + 1] === '"') { field += '"'; i++; }
+            else if (ch === '"') quoted = false;
+            else field += ch;
+          } else if (ch === '"' && field === '') quoted = true;
+          else if (ch === ',') { row.push(field); field = ''; }
+          else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && source[i + 1] === '\n') i++;
+            row.push(field); rows.push(row); row = []; field = '';
+          } else field += ch;
+        }
+        if (quoted) throw new Error('CSV has an unclosed quoted field.');
+        if (field !== '' || row.length || (source.length && !/[\r\n]$/.test(source))) { row.push(field); rows.push(row); }
+        return rows;
+      },
+      csvToJson() {
+        this.applyTransform(source => {
+          const rows = this.parseCsv(source).filter(row => row.some(cell => cell.trim() !== ''));
+          if (!rows.length) throw new Error('No CSV data found.');
+          const headers = rows[0].map(header => header.trim());
+          if (!headers.some(Boolean)) throw new Error('The first CSV row must contain headers.');
+          const objects = rows.slice(1).map(row => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ''])));
+          return JSON.stringify(objects, null, 2);
+        }, 'CSV converted to JSON.');
+      },
+      applyRegexTemplate: () => elements.textTools.regexInput.value = textTools.regexTemplates[elements.textTools.regexTemplate.value] || '',
+      runRegex(action) {
+        const pattern = elements.textTools.regexInput.value; if (!pattern) return;
+        try {
+          const regex = new RegExp(pattern, 'g');
+          if (action === 'extract') { const matches = elements.codeTextarea.value.match(regex); elements.codeTextarea.value = matches ? matches.join('\n') : ''; utils.showToast(matches ? `Extracted ${matches.length} matches.` : 'No matches found.'); }
+          else elements.codeTextarea.value = elements.codeTextarea.value.replace(regex, '');
         } catch (e) { utils.showToast('Invalid regex pattern.', 'error'); }
       },
       extractMatches: () => textTools.runRegex('extract'),
       removeMatches: () => textTools.runRegex('remove'),
     };
 
-    // --- CUSTOM VANILLA JS DIFF CHECKER (LCS Algorithm) ---
     const diffChecker = {
       compare() {
-        const a = elements.diff.original.value.split('\n');
-        const b = elements.diff.modified.value.split('\n');
+        const a = elements.diff.original.value.split('\n'), b = elements.diff.modified.value.split('\n');
         const n = a.length, m = b.length;
         const lcsMatrix = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
-        for (let i = 1; i <= n; i++) {
-          for (let j = 1; j <= m; j++) {
-            lcsMatrix[i][j] = a[i - 1] === b[j - 1]
-              ? lcsMatrix[i - 1][j - 1] + 1
-              : Math.max(lcsMatrix[i - 1][j], lcsMatrix[i][j - 1]);
-          }
-        }
-        const result = [];
-        let i = n, j = m;
+        for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) lcsMatrix[i][j] = a[i - 1] === b[j - 1] ? lcsMatrix[i - 1][j - 1] + 1 : Math.max(lcsMatrix[i - 1][j], lcsMatrix[i][j - 1]);
+        const result = []; let i = n, j = m;
         while (i > 0 || j > 0) {
-          if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
-            result.unshift({ line: a[i - 1], type: 'common' }); i--; j--;
-          } else if (j > 0 && (i === 0 || lcsMatrix[i][j - 1] >= lcsMatrix[i - 1][j])) {
-            result.unshift({ line: b[j - 1], type: 'added' }); j--;
-          } else if (i > 0 && (j === 0 || lcsMatrix[i][j - 1] < lcsMatrix[i - 1][j])) {
-            result.unshift({ line: a[i - 1], type: 'removed' }); i--;
-          } else { break; }
+          if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) { result.unshift({ line: a[i - 1], type: 'common' }); i--; j--; }
+          else if (j > 0 && (i === 0 || lcsMatrix[i][j - 1] >= lcsMatrix[i - 1][j])) { result.unshift({ line: b[j - 1], type: 'added' }); j--; }
+          else if (i > 0 && (j === 0 || lcsMatrix[i][j - 1] < lcsMatrix[i - 1][j])) { result.unshift({ line: a[i - 1], type: 'removed' }); i--; }
+          else break;
         }
         const fragment = document.createDocumentFragment();
-        result.forEach(part => {
-          const span = document.createElement('span');
-          span.className = `diff-line diff-${part.type}`;
-          span.textContent = `${part.type === 'added' ? '+' : part.type === 'removed' ? '-' : ' '} ${part.line}`;
-          fragment.appendChild(span);
-        });
-        elements.diff.output.innerHTML = '';
-        elements.diff.output.appendChild(fragment);
+        result.forEach(part => { const span = document.createElement('span'); span.className = `diff-line diff-${part.type}`; span.textContent = `${part.type === 'added' ? '+' : part.type === 'removed' ? '-' : ' '} ${part.line}`; fragment.appendChild(span); });
+        elements.diff.output.innerHTML = ''; elements.diff.output.appendChild(fragment);
       }
     };
 
-    // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       actions.setTheme(savedTheme);
