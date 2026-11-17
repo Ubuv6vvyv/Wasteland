@@ -275,7 +275,7 @@
     };
 
     const textTools = {
-      regexTemplates: { email: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', cashconvert: 'https:\\/\\/www\\.cashconverters\\.com\\.au\\/globalassets\\/valuationcertificates\\/valuation-certificate-[0-9]+\\.pdf', url: 'https?:\\/\\/[\\w\\-\\.]+\\.[a-zA-Z]{2,}[\\w\\-\\._~:\\/?#[\\]@!\\$&\\'\\(\\)\\*\\+,;=]*', phone: '\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}', date: '\\d{4}-\\d{2}-\\d{2}|\\d{1,2}/\\d{1,2}/\\d{2,4}', name: '\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+\\b', ipv4: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b', hexcolor: '#(?:[0-9a-fA-F]{3}){1,2}\\b', twitter: '@[A-Za-z0-9_]{1,15}\\b', htmltag: '<\\/?[a-zA-Z]+[^>]*>' },
+      regexTemplates: { email: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', cashconvert: 'https:\\/\\/www\\.cashconverters\\.com\\.au\\/globalassets\\/valuationcertificates\\/valuation-certificate-[0-9]+\\.pdf', url: 'https?:\\/\\/[\\w\\-\\.]+\\.[a-zA-Z]{2,}[\\w\\-\\._~:\\/?#[\\]@!\\$&\'\\(\\)\\*\\+,;=]*', phone: '\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}', date: '\\d{4}-\\d{2}-\\d{2}|\\d{1,2}/\\d{1,2}/\\d{2,4}', name: '\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)+\\b', ipv4: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b', hexcolor: '#(?:[0-9a-fA-F]{3}){1,2}\\b', twitter: '@[A-Za-z0-9_]{1,15}\\b', htmltag: '<\\/?[a-zA-Z]+[^>]*>' },
       switchTab(event, tabName) {
         elements.textTools.tabContents.forEach(c => c.classList.remove('active')); elements.textTools.tabButtons.forEach(b => b.classList.remove('active'));
         document.getElementById(tabName).classList.add('active'); event.currentTarget.classList.add('active');
@@ -313,32 +313,34 @@
           elements.codeTextarea.value = source.replace(/<!--[\s\S]*?-->/g, '');
           return;
         }
-        // Strip JS/CSS line and block comments while preserving quoted strings and template literals.
-        let output = '', quote = '', escaped = false;
-        for (let i = 0; i < source.length; i++) {
-          const ch = source[i], next = source[i + 1];
-          if (quote) {
+        try {
+          // Strip JS/CSS line and block comments while preserving quoted strings and template literals.
+          let output = '', quote = '', escaped = false;
+          for (let i = 0; i < source.length; i++) {
+            const ch = source[i], next = source[i + 1];
+            if (quote) {
+              output += ch;
+              if (escaped) escaped = false;
+              else if (ch === '\\') escaped = true;
+              else if (ch === quote) quote = '';
+              continue;
+            }
+            if (ch === '"' || ch === "'" || ch === '`') { quote = ch; output += ch; continue; }
+            if (ch === '/' && next === '*') {
+              const end = source.indexOf('*/', i + 2);
+              if (end === -1) throw new Error('Unclosed block comment. Nothing was changed.');
+              i = end + 1;
+              continue;
+            }
+            if (language === 'js' && ch === '/' && next === '/') {
+              while (i < source.length && source[i] !== '\n' && source[i] !== '\r') i++;
+              if (i < source.length) output += source[i];
+              continue;
+            }
             output += ch;
-            if (escaped) escaped = false;
-            else if (ch === '\\') escaped = true;
-            else if (ch === quote) quote = '';
-            continue;
           }
-          if (ch === '"' || ch === "'" || ch === '`') { quote = ch; output += ch; continue; }
-          if (ch === '/' && next === '*') {
-            const end = source.indexOf('*/', i + 2);
-            if (end === -1) throw new Error('Unclosed block comment. Nothing was changed.');
-            i = end + 1;
-            continue;
-          }
-          if (ch === '/' && next === '/') {
-            while (i < source.length && source[i] !== '\n' && source[i] !== '\r') i++;
-            if (i < source.length) output += source[i];
-            continue;
-          }
-          output += ch;
-        }
-        elements.codeTextarea.value = output;
+          elements.codeTextarea.value = output;
+        } catch (error) { utils.showToast(error.message || 'Could not remove comments.', 'error'); }
       },
       applyTransform(transform, successMessage) {
         try {
