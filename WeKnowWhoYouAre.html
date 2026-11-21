@@ -1,833 +1,1138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>Comprehensive Device Fingerprint Explorer</title>
-	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
-	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/UAParser.js/0.7.28/ua-parser.min.js"></script>
-	
-	<script defer src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js" integrity="sha384-Nqf05JOUyU9dJ9HwB/1iTc9/89s7j5sI352D0sO5Y1klfjQ7Cr/qYl98vTf4s77y" crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100-Vector Browser Fingerprint & Leak Telemetry</title>
+<style>
+  :root {
+    --bg: #080b12;
+    --surface: #0f1522;
+    --surface-alt: #141c2e;
+    --border: #1e293b;
+    --border-hi: #334155;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #38bdf8;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace;
+  }
 
-	<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAqVp90WuvdNXrtmT0gKY4TYS3D1A0iUPA&libraries=places"></script>
+  * { box-sizing: border-box; }
 
-	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    line-height: 1.35;
+  }
 
+  /* Sticky Command Bar */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8, 11, 18, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
 
-	<style>
-		body {
-			background-color: #121212;
-			color: #00ff00;
-			font-family: 'Fira Code', monospace;
-			font-size: 14px;
-		}
-		h1, h2 {
-			color: #f39c12;
-		}
-		pre {
-			white-space: pre-wrap;
-			word-wrap: break-word;
-			background-color: #000b07;
-			padding: 15px;
-			border-radius: 8px;
-			max-height: 350px;
-			overflow-y: auto;
-			border: 1px solid #2c3e50;
-		}
-		.fingerprint-section {
-			background-color: #1a1a1a;
-			border-radius: 12px;
-			padding: 20px;
-			margin-bottom: 20px;
-			box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-			transition: all 0.3s ease;
-			border-left: 5px solid #f39c12;
-		}
-		.fingerprint-section:hover {
-			transform: translateY(-5px);
-			box-shadow: 0 8px 16px rgba(0,0,0,0.6);
-		}
-		.warning {
-			color: #f39c12;
-			font-weight: bold;
-			padding: 15px;
-			background-color: rgba(243, 156, 18, 0.1);
-			border-radius: 8px;
-			border-left: 5px solid #f39c12;
-		}
-		.error {
-			color: #e74c3c;
-			font-weight: bold;
-			padding: 15px;
-			background-color: rgba(231, 76, 60, 0.1);
-			border-radius: 8px;
-			border-left: 5px solid #e74c3c;
-		}
-		#mapContainer {
-			height: 600px;
-			width: 100%;
-			margin-top: 20px;
-			border-radius: 8px;
-		}
-		#privacyScoreContainer {
-			text-align: center;
-			padding: 20px;
-			margin-bottom: 20px;
-			border-radius: 12px;
-		}
-		#privacyScore {
-			font-size: 48px;
-			font-weight: bold;
-		}
-        /* Style for the new location text */
-        #locationText {
-            text-align: center;
-            font-size: 2em; /* Large font size */
-            color: #2ecc71; /* A brighter green */
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: #1a1a1a;
-            border-left: 5px solid #2ecc71;
-        }
-	</style>
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #f8fafc;
+  }
+
+  .fp-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .score-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  input.search {
+    background: var(--surface);
+    border: 1px solid var(--border-hi);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 190px;
+    outline: none;
+  }
+  input.search:focus { border-color: var(--accent); }
+
+  .btn {
+    background: var(--surface-alt);
+    color: var(--text);
+    border: 1px solid var(--border-hi);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #fcd34d;
+  }
+  .btn-primary:hover {
+    background: var(--amber);
+    color: #000;
+  }
+
+  /* High-Density Masonry / Bento Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 10px;
+    padding: 10px 14px 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .card-head {
+    background: var(--surface-alt);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-range {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 32px minmax(135px, 44%) 1fr auto;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-bottom: 1px solid rgba(30, 41, 59, 0.55);
+    cursor: pointer;
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(56, 189, 248, 0.06); }
+  .row.hidden { display: none; }
+
+  .idx {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .key {
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+  }
+
+  .val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+  }
+  .grid.expanded .val {
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+  .t-auto { background: rgba(16, 185, 129, 0.14); color: #34d399; }
+  .t-hash { background: rgba(168, 85, 247, 0.16); color: #d8b4fe; }
+  .t-leak { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+  .t-gate { background: rgba(245, 158, 11, 0.16); color: #fcd34d; }
+
+  /* Interactive Mini Bar inside Sensor Card */
+  .prompt-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 8px;
+    background: #0b101b;
+    border-bottom: 1px solid var(--border);
+  }
+  .mini-btn {
+    background: var(--surface-alt);
+    border: 1px solid var(--border-hi);
+    color: #cbd5e1;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .mini-btn:hover { border-color: var(--amber); color: #fcd34d; }
+
+  /* Visual Proof Strip */
+  .visual-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 8px;
+    background: #0b101b;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .visual-strip canvas {
+    border: 1px solid var(--border-hi);
+    border-radius: 3px;
+    height: 22px;
+  }
+  a.visited-probe {
+    color: #38bdf8;
+    text-decoration: none;
+    font-family: var(--font-mono);
+  }
+  a.visited-probe:visited {
+    color: #c084fc !important;
+  }
+
+  /* Adblock Bait */
+  .ad-banner, .adsbox, .doubleclick, .ad-placement {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    background: #0f172a;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; }
+</style>
 </head>
 <body>
-	<h1>🕵️ We Already Know Who You Are</h1>
 
-    <div class="fingerprint-section" id="liveLocationSection">
-        <h2 id="locationText">Determining your location...</h2>
-        <div id="mapContainer"></div>
+<div id="ad-bait" class="ad-banner adsbox doubleclick ad-placement"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <h1>FORENSIC FINGERPRINT MATRIX</h1>
+    <span class="fp-badge" id="masterHash">FP-ID: COMPUTING...</span>
+    <span class="score-pill" id="entropyScore">EXPOSURE: --%</span>
+    <span class="fp-badge" id="autoCounter" style="color:#34d399;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.1);">95/100 AUTO-FIRED</span>
+  </div>
+  <div class="controls">
+    <input type="text" class="search" id="searchInput" placeholder="Filter 100 vectors (e.g. webgl, ip)...">
+    <button class="btn btn-primary" id="chainBtn" onclick="Probe.chainInteractive()">⚡ Chain Prompts (096–100)</button>
+    <button class="btn" onclick="document.getElementById('grid').classList.toggle('expanded')">↔ Wrap Values</button>
+    <button class="btn" onclick="Probe.copyJSON()">📋 Copy JSON</button>
+  </div>
+</header>
+
+<main class="grid" id="grid">
+  <!-- Domain 1 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">01 // Navigator, UA & Privacy Signals</span>
+      <span class="card-range">001–016</span>
     </div>
+    <div class="rows" id="sec-1"></div>
+  </section>
 
-	<div id="privacyScoreContainer">
-		<h2>Your Privacy Score</h2>
-		<div id="privacyScore">Calculating...</div>
-	</div>
+  <!-- Domain 2 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">02 // Hardware, CPU, Memory & Input</span>
+      <span class="card-range">017–030</span>
+    </div>
+    <div class="rows" id="sec-2"></div>
+  </section>
 
-	<div id="warningContainer" class="warning" style="display: none;"></div>
-	<div id="errorContainer" class="error" style="display: none;"></div>
+  <!-- Domain 3 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">03 // Display, Geometry & Media Queries</span>
+      <span class="card-range">031–046</span>
+    </div>
+    <div class="rows" id="sec-3"></div>
+  </section>
 
-	<div id="fingerprintResults">
-		<div class="fingerprint-section" id="networkSection">
-			<h2>🌐 Network & WebRTC</h2><pre id="networkInfo">Collecting network information...</pre>
-		</div>
-		<div class="fingerprint-section" id="deviceSection">
-			<h2>📱 Device</h2><pre id="deviceInfo">Collecting device information...</pre>
-		</div>
-		<div class="fingerprint-section" id="batterySection">
-			<h2>🔋 Power</h2><pre id="batteryInfo">Collecting battery information...</pre>
-		</div>
-		<div class="fingerprint-section" id="geolocationSection">
-			<h2>📍 Geolocation (Raw Data)</h2><pre id="geoLocation">Collecting geolocation data...</pre>
-		</div>
-		<div class="fingerprint-section" id="sensorSection">
-			<h2>📡 Sensors</h2><pre id="sensorInfo">Collecting sensor information...</pre>
-		</div>
-		<div class="fingerprint-section" id="browserSection">
-			<h2>🌈 Browser</h2><pre id="browserEcosystem">Collecting browser data...</pre>
-		</div>
-        <div class="fingerprint-section" id="canvasFingerprintSection">
-            <h2>🎨 Canvas & WebGL Fingerprint</h2><pre id="canvasFingerprintInfo">Generating graphical fingerprints...</pre>
-        </div>
-        <div class="fingerprint-section" id="audioFingerprintSection">
-            <h2>🎵 Audio Fingerprint</h2><pre id="audioFingerprintInfo">Analyzing audio stack...</pre>
-        </div>
-        <div class="fingerprint-section" id="mediaDeviceSection">
-            <h2>🎤 Media Devices</h2><pre id="mediaDeviceInfo">Enumerating connected devices...</pre>
-        </div>
-        <div class="fingerprint-section" id="fontSection">
-            <h2>🔤 Font Fingerprint</h2><pre id="fontInfo">Detecting installed fonts...</pre>
-        </div>
-        <div class="fingerprint-section" id="storageSection">
-            <h2>💾 Storage Analysis</h2><pre id="storageInfo">Analyzing storage capacity...</pre>
-        </div>
-        <div class="fingerprint-section" id="timingSection">
-            <h2>⏱️ Timing Analysis</h2><pre id="timingInfo">Benchmarking performance...</pre>
-        </div>
-		<div class="fingerprint-section" id="advancedSection">
-			<h2>🔍 Advanced Raw Data</h2><pre id="advancedInfo">Collecting advanced characteristics...</pre>
-		</div>
-        </div>
+  <!-- Domain 4 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">04 // Locale, Timezone & Timing Precision</span>
+      <span class="card-range">047–056</span>
+    </div>
+    <div class="rows" id="sec-4"></div>
+  </section>
 
-	<script>
-		class DeviceFingerprinter {
-			constructor() {
-				this.errors = [];
-				this.warnings = [];
-				this.privacyScore = 100;
-                this.map = null; // To hold the map instance
-                this.marker = null; // To hold the marker instance
-                this.geocoder = null; // To hold the geocoder instance
-                this.hasScoredGeolocation = false; // Flag to ensure score is deducted only once
-			}
+  <!-- Domain 5 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">05 // Canvas, WebGL, Audio & Font Entropy</span>
+      <span class="card-range">057–072</span>
+    </div>
+    <div class="visual-strip">
+      <span>Live Canvas Render (057):</span>
+      <canvas id="canvasPreview" width="160" height="24"></canvas>
+    </div>
+    <div class="rows" id="sec-5"></div>
+  </section>
 
-            updatePrivacyScore(points, reason) {
-                this.privacyScore -= points;
-                console.log(`Privacy Score decreased by ${points} due to: ${reason}`);
-                const scoreElement = document.getElementById('privacyScore');
-                const scoreContainer = document.getElementById('privacyScoreContainer');
-                scoreElement.textContent = `${Math.max(0, this.privacyScore.toFixed(0))}%`;
+  <!-- Domain 6 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">06 // Network, Protocol & WebRTC Leaks</span>
+      <span class="card-range">073–084</span>
+    </div>
+    <div class="rows" id="sec-6"></div>
+  </section>
 
-                if (this.privacyScore >= 80) {
-                    scoreContainer.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
-                    scoreContainer.style.borderLeft = '5px solid #2ecc71';
-                } else if (this.privacyScore >= 50) {
-                    scoreContainer.style.backgroundColor = 'rgba(241, 196, 15, 0.1)';
-                    scoreContainer.style.borderLeft = '5px solid #f1c40f';
-                } else {
-                    scoreContainer.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
-                    scoreContainer.style.borderLeft = '5px solid #e74c3c';
-                }
-            }
+  <!-- Domain 7 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">07 // Storage, Incognito & Blocker Leaks</span>
+      <span class="card-range">085–093</span>
+    </div>
+    <div class="visual-strip">
+      <span>CSS History Probe (093b):</span>
+      <a href="https://example.com" target="_blank" class="visited-probe">example.com (:visited state)</a>
+    </div>
+    <div class="rows" id="sec-7"></div>
+  </section>
 
+  <!-- Domain 8 -->
+  <section class="card">
+    <div class="card-head">
+      <span class="card-title">08 // Battery, Permissions & Hardware Gates</span>
+      <span class="card-range">094–100</span>
+    </div>
+    <div class="prompt-bar">
+      <button class="mini-btn" onclick="Probe.fire096()">096 Cam/Mic</button>
+      <button class="mini-btn" onclick="Probe.fire097()">097 GPS</button>
+      <button class="mini-btn" onclick="Probe.fire098()">098 Notify</button>
+      <button class="mini-btn" onclick="Probe.fire099()">099 Clipboard</button>
+      <button class="mini-btn" onclick="Probe.fire100()">100 Motion/BT</button>
+    </div>
+    <div class="rows" id="sec-8"></div>
+  </section>
+</main>
 
-			logError(message) {
-				console.error(message);
-				this.errors.push(message);
-				const errorContainer = document.getElementById('errorContainer');
-				errorContainer.style.display = 'block';
-				errorContainer.innerHTML += `<p>${message}</p>`;
-			}
+<div class="toast" id="toast">Copied to clipboard</div>
 
-			logWarning(message) {
-				console.warn(message);
-				this.warnings.push(message);
-				const warningContainer = document.getElementById('warningContainer');
-				warningContainer.style.display = 'block';
-				warningContainer.innerHTML += `<p>${message}</p>`;
-			}
-
-			async getNetworkInfo() {
-				const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-				if (connection && connection.downlink) this.updatePrivacyScore(2, 'Network information detected');
-				return {
-					connectionType: connection?.type || 'Unknown',
-					effectiveBandwidth: connection?.downlink ? `${connection.downlink} Mbps`: 'N/A',
-					roundTripTime: connection?.rtt ? `${connection.rtt} ms`: 'N/A',
-					saveMode: connection?.saveData ? 'Enabled': 'Disabled'
-				};
-			}
-
-			getDeviceSignature() {
-				const parser = new UAParser();
-				const result = parser.getResult();
-                this.updatePrivacyScore(5, 'Device and OS details identified');
-				return {
-					browser: { name: result.browser.name, version: result.browser.version },
-					device: { model: result.device.model || 'Desktop', type: result.device.type || 'Desktop', vendor: result.device.vendor || 'Unknown' },
-					os: { name: result.os.name, version: result.os.version },
-					system: {
-						architecture: result.cpu.architecture || 'Unknown',
-						screenResolution: `${window.screen.width}x${window.screen.height}`,
-						colorDepth: window.screen.colorDepth,
-						pixelRatio: window.devicePixelRatio,
-						memoryEstimate: navigator.deviceMemory ? `${navigator.deviceMemory} GB`: 'N/A'
-					}
-				};
-			}
-
-            // MODIFIED: This method now sets up a live watch
-            startLiveGeolocation() {
-                if (!navigator.geolocation) {
-                    this.logWarning('Geolocation not supported');
-                    document.getElementById('geoLocation').textContent = 'Geolocation not supported by this browser.';
-                    document.getElementById('locationText').textContent = 'Location unavailable.';
-                    return;
-                }
-
-                // Initialize the geocoder once
-                this.geocoder = new google.maps.Geocoder();
-
-                const options = {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                };
-
-                navigator.geolocation.watchPosition(
-                    (position) => {
-                        const { latitude, longitude, accuracy } = position.coords;
-                        const locationData = { latitude, longitude, accuracy };
-                        
-                        if (!this.hasScoredGeolocation) {
-                            this.updatePrivacyScore(20, 'Precise geolocation coordinates obtained');
-                            this.hasScoredGeolocation = true; // Set flag so we don't deduct points again
-                        }
-
-                        // Update the raw data section
-                        document.getElementById('geoLocation').textContent = JSON.stringify(locationData, null, 2);
-                        
-                        // Update the map and the large location text
-                        this.renderMap(locationData);
-                        this.reverseGeocodeAndUpdateUI(locationData);
-                    },
-                    (error) => {
-                        this.logError(`Geolocation Error: ${error.message}`);
-                        document.getElementById('geoLocation').textContent = `Error: ${error.message}`;
-                        document.getElementById('locationText').textContent = 'Could not retrieve location.';
-                    },
-                    options
-                );
-            }
-
-            getWebRtcLeak() {
-                return new Promise((resolve) => {
-					try {
-						const pc = new RTCPeerConnection({iceServers: []});
-						pc.createDataChannel('');
-						pc.createOffer().then(offer => pc.setLocalDescription(offer));
-						pc.onicecandidate = (event) => {
-							if (event?.candidate?.candidate) {
-								const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
-								const ipMatch = ipRegex.exec(event.candidate.candidate);
-								if (ipMatch) {
-									this.updatePrivacyScore(10, 'WebRTC leak reveals real IP');
-									pc.onicecandidate = null;
-									resolve({ potentialLeak: ipMatch[1] });
-								}
-							}
-						};
-						setTimeout(() => { 
-							pc.onicecandidate = null;
-							resolve({ potentialLeak: 'Not detected within 1s' });
-						}, 1000);
-					} catch (error) {
-						this.logError('WebRTC Error: ' + error.message);
-						resolve(null);
-					}
-                });
-            }
-
-
-            getCanvasFingerprint() {
-                try {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const txt = 'i9asdm..$#po((^@KbXrww!~cz';
-                    ctx.textBaseline = "top";
-                    ctx.font = "14px 'Arial'";
-                    ctx.textBaseline = "alphabetic";
-                    ctx.fillStyle = "#f60";
-                    ctx.fillRect(125, 1, 62, 20);
-                    ctx.fillStyle = "#069";
-                    ctx.fillText(txt, 2, 15);
-                    ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-                    ctx.fillText(txt, 4, 17);
-                    const dataUrl = canvas.toDataURL();
-                    this.updatePrivacyScore(8, 'Unique canvas fingerprint generated');
-                    return CryptoJS.MD5(dataUrl).toString();
-                } catch (error) {
-                    this.logError('Canvas Fingerprinting Error: ' + error.message);
-                    return null;
-                }
-            }
-
-            getWebGLFingerprint() {
-                try {
-                    const canvas = document.createElement('canvas');
-                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                    if (!gl) return null;
-                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                    this.updatePrivacyScore(8, 'Graphics card model identified via WebGL');
-                    return {
-                        vendor: gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
-                        renderer: gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL),
-                    };
-                } catch (error) {
-                    this.logError('WebGL Fingerprinting Error: ' + error.message);
-                    return null;
-                }
-            }
-
-            async getAudioFingerprint() {
-                return new Promise((resolve) => {
-                    try {
-                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioCtx.createOscillator();
-                        const analyser = audioCtx.createAnalyser();
-                        oscillator.type = 'triangle';
-                        oscillator.frequency.setValueAtTime(10000, audioCtx.currentTime);
-                        oscillator.connect(analyser);
-                        analyser.connect(audioCtx.destination);
-                        oscillator.start(0);
-
-                        setTimeout(() => {
-                            const frequencyData = new Float32Array(analyser.frequencyBinCount);
-                            analyser.getFloatFrequencyData(frequencyData);
-                            oscillator.stop(0);
-                            const fingerprint = CryptoJS.MD5(frequencyData.toString()).toString();
-                            this.updatePrivacyScore(8, 'Unique audio hardware fingerprint generated');
-							audioCtx.close();
-                            resolve(fingerprint);
-                        }, 500);
-                    } catch (error) {
-                        this.logError('Audio Fingerprinting Error: ' + error.message);
-                        resolve(null);
-                    }
-                });
-            }
-
-            async getMediaDevices() {
-                try {
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-                        this.logWarning('Media device enumeration not supported.');
-                        return null;
-                    }
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    if (devices.some(d => d.label)) {
-                        this.updatePrivacyScore(7, 'Connected media devices enumerated');
-                    }
-                    return devices.map(({ deviceId, kind, label }) => ({
-                        kind,
-                        label: label || (deviceId ? 'Permission needed to see label' : 'N/A')
-                    }));
-                } catch (error) {
-                    this.logError('Media Device Enumeration Error: ' + error.message);
-                    return null;
-                }
-            }
-
-
-            getFontFingerprint() {
-                const fonts = ["Arial", "Verdana", "Helvetica", "Times New Roman", "Courier New", "Georgia", "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Trebuchet MS", "Impact", "Fira Code", "Menlo", "Consolas"];
-                const detectedFonts = fonts.filter(font => {
-                    const defaultWidth = document.body.clientWidth;
-                    const testElement = document.createElement('span');
-                    testElement.style.fontFamily = font;
-                    testElement.innerHTML = 'wm WM';
-                    document.body.appendChild(testElement);
-                    const width = testElement.clientWidth;
-                    document.body.removeChild(testElement);
-                    return width !== defaultWidth;
-                });
-                if (detectedFonts.length > 0) this.updatePrivacyScore(8, 'Installed fonts detected');
-                return detectedFonts;
-            }
-
-
-            async getStorageInfo() {
-                try {
-                    if (navigator.storage?.estimate) {
-                        const estimate = await navigator.storage.estimate();
-                        this.updatePrivacyScore(3, 'Storage capacity estimated');
-                        return {
-                            quota: `${(estimate.quota / 1024 / 1024 / 1024).toFixed(2)} GB`,
-                            usage: `${(estimate.usage / 1024 / 1024).toFixed(2)} MB`
-                        };
-                    }
-                    return null;
-                } catch (error) {
-                    this.logError('Storage Analysis Error: ' + error.message);
-                    return null;
-                }
-            }
-
-            getTimingAnalysis() {
-                const startTime = performance.now();
-                for (let i = 0; i < 2000000; i++) { Math.sqrt(i); }
-                const endTime = performance.now();
-                const duration = (endTime - startTime).toFixed(2);
-                this.updatePrivacyScore(2, 'CPU performance profiled');
-                return `${duration} ms to complete benchmark`;
-            }
-
-
-			async getBatteryInfo() {
-				try {
-					if (!navigator.getBattery) {
-						this.logWarning('Battery API not supported.');
-						return null;
-					}
-					const battery = await navigator.getBattery();
-                    this.updatePrivacyScore(3, 'Battery status read');
-					return {
-						charging: battery.charging,
-                        batteryLevel: `${(battery.level * 100).toFixed(2)}%`,
-                        chargingTime: battery.chargingTime === Infinity ? 'N/A': `${battery.chargingTime}s`,
-                        dischargingTime: battery.dischargingTime === Infinity ? 'N/A': `${battery.dischargingTime}s`
-					};
-				} catch (error) {
-					this.logError('Battery Metrics Error: ' + error.message); return null;
-				}
-			}
-
-			getSensorCapabilities() {
-				return {
-					sensors: {
-						accelerometer: 'Accelerometer' in window, gyroscope: 'Gyroscope' in window, magnetometer: 'Magnetometer' in window, ambientLight: 'AmbientLightSensor' in window
-					}, hardware: {
-						hardwareConcurrency: navigator.hardwareConcurrency || 'Unknown', maxTouchPoints: navigator.maxTouchPoints
-					}
-				};
-			}
-
-			async generateBrowserEcosystemFingerprint() {
-                try {
-                    if (typeof FingerprintJS === 'undefined') {
-                        throw new Error('FingerprintJS library not loaded. It may be blocked by a browser extension.');
-                    }
-                    const fp = await FingerprintJS.load();
-                    const result = await fp.get();
-                    this.updatePrivacyScore(15, 'Unique browser fingerprint generated');
-                    return {
-                        visitorId: result.visitorId,
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        languages: navigator.languages,
-                        cookiesEnabled: navigator.cookieEnabled,
-                        doNotTrack: navigator.doNotTrack
-                    };
-                } catch (error) {
-                    this.logError('Browser Fingerprint Error: ' + error.message);
-                    return null;
-                }
-			}
-
-			getAdvancedCharacteristics() {
-				return {
-					userAgent: navigator.userAgent, platform: navigator.platform, vendor: navigator.vendor
-				};
-			}
-
-			async collectFingerprint() {
-				try {
-                    // Start live geolocation updates immediately
-                    this.startLiveGeolocation();
-
-					const [network, battery, browser, webrtc, mediaDevices, storage, audioFingerprint] = await Promise.all([
-						// getGeolocation was removed from here
-						this.getNetworkInfo(),
-						this.getBatteryInfo(),
-						this.generateBrowserEcosystemFingerprint(),
-                        this.getWebRtcLeak(),
-                        this.getMediaDevices(),
-                        this.getStorageInfo(),
-                        this.getAudioFingerprint()
-					]);
-
-                    const device = this.getDeviceSignature();
-                    const sensors = this.getSensorCapabilities();
-                    const canvasFingerprint = this.getCanvasFingerprint();
-                    const webglFingerprint = this.getWebGLFingerprint();
-                    const fonts = this.getFontFingerprint();
-                    const timing = this.getTimingAnalysis();
-
-					this.updateDOMWithFingerprint({
-						network: { ...network, webrtcLeak: webrtc },
-                        device, battery, sensors, browser, // geolocation removed from here
-						advanced: this.getAdvancedCharacteristics(),
-                        canvas: { canvas_md5: canvasFingerprint, ...webglFingerprint },
-                        audio: { audio_md5: audioFingerprint },
-                        mediaDevices,
-                        fonts: { detected: fonts },
-                        storage,
-                        timing: { benchmark: timing }
-					});
-
-				} catch (error) {
-					this.logError('Fingerprint Collection Error: ' + error.message);
-				}
-			}
-
-            // MODIFIED: This function now updates the map instead of always creating a new one
-            renderMap(location) {
-                const currentPos = { lat: location.latitude, lng: location.longitude };
-
-                if (!this.map) { // If the map doesn't exist, create it
-                    this.map = new google.maps.Map(document.getElementById('mapContainer'), {
-                        center: currentPos,
-                        zoom: 17, // Zoom in a bit closer
-                        mapTypeId: 'roadmap',
-                        disableDefaultUI: true, // Cleaner map
-                        styles: [ // Dark mode map style
-                            {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
-                            {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]},
-                            {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]},
-                            {featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{color: '#d59563'}]},
-                            {featureType: 'poi', elementType: 'labels.text.fill', stylers: [{color: '#d59563'}]},
-                            {featureType: 'poi.park', elementType: 'geometry', stylers: [{color: '#263c3f'}]},
-                            {featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{color: '#6b9a76'}]},
-                            {featureType: 'road', elementType: 'geometry', stylers: [{color: '#38414e'}]},
-                            {featureType: 'road', elementType: 'geometry.stroke', stylers: [{color: '#212a37'}]},
-                            {featureType: 'road', elementType: 'labels.text.fill', stylers: [{color: '#9ca5b3'}]},
-                            {featureType: 'road.highway', elementType: 'geometry', stylers: [{color: '#746855'}]},
-                            {featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{color: '#1f2835'}]},
-                            {featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{color: '#f3d19c'}]},
-                            {featureType: 'transit', elementType: 'geometry', stylers: [{color: '#2f3948'}]},
-                            {featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{color: '#d59563'}]},
-                            {featureType: 'water', elementType: 'geometry', stylers: [{color: '#17263c'}]},
-                            {featureType: 'water', elementType: 'labels.text.fill', stylers: [{color: '#515c6d'}]},
-                            {featureType: 'water', elementType: 'labels.text.stroke', stylers: [{color: '#17263c'}]}
-                        ]
-                    });
-                    this.marker = new google.maps.Marker({
-                        position: currentPos,
-                        map: this.map,
-                        title: 'Your Approximate Location'
-                    });
-                } else { // If map already exists, just move the center and marker
-                    this.map.setCenter(currentPos);
-                    this.marker.setPosition(currentPos);
-                }
-            }
-
-            // NEW: Function to convert coordinates to an address and update the UI
-            reverseGeocodeAndUpdateUI(location) {
-                const latlng = { lat: location.latitude, lng: location.longitude };
-                this.geocoder.geocode({ location: latlng }, (results, status) => {
-                    const locationTextElement = document.getElementById('locationText');
-                    if (status === "OK") {
-                        if (results[0]) {
-                            locationTextElement.textContent = results[0].formatted_address;
-                        } else {
-                            locationTextElement.textContent = 'No address found at this location.';
-                        }
-                    } else {
-                        locationTextElement.textContent = `Geocoder failed: ${status}`;
-                        this.logError("Geocoder failed due to: " + status);
-                    }
-                });
-            }
-
-			updateDOMWithFingerprint(data) {
-                Object.entries(data).forEach(([key, value]) => {
-                    const elementIdMap = {
-                        network: 'networkInfo', device: 'deviceInfo', battery: 'batteryInfo',
-                        sensors: 'sensorInfo', browser: 'browserEcosystem', /*geolocation handled separately*/
-                        advanced: 'advancedInfo', canvas: 'canvasFingerprintInfo',
-                        audio: 'audioFingerprintInfo', mediaDevices: 'mediaDeviceInfo', fonts: 'fontInfo',
-                        storage: 'storageInfo', timing: 'timingInfo'
-                    };
-                    const element = document.getElementById(elementIdMap[key]);
-                    if (element) {
-                        element.textContent = value ? JSON.stringify(value, null, 2) : 'Not available or an error occurred.';
-                    }
-                });
-			}
-		}
-
-		document.addEventListener('DOMContentLoaded', () => {
-			const fingerprintInstance = new DeviceFingerprinter();
-			fingerprintInstance.collectFingerprint();
-		});
-	</script>
 <script>
-			initMap(lat, lng) {
-				const location = {
-					lat,
-					lng
-				};
-				this.map = new google.maps.Map(document.getElementById('mapContainer'), {
-					center: location,
-					zoom: 15,
-					mapTypeId: 'roadmap'
-				});
+(() => {
+  // Fast deterministic 64-bit hash (cyrb53 pair) - works offline & on file:// without crypto.subtle
+  function hash64(str) {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0, ch; i < str.length; i++) {
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+  }
 
-				new google.maps.Marker({
-					position: location,
-					map: this.map,
-					title: 'Your Location'
-				});
+  const state = {};
+  const rowEls = {};
 
-				this.reverseGeocode(location);
-			}
+  const VECTORS = [
+    // 01: Navigator, UA & Privacy (001-016)
+    [1, '001', 'navigator.userAgent', 'auto'],
+    [1, '002', 'uaData.brands (Client Hints)', 'auto'],
+    [1, '003', 'uaData.mobile', 'auto'],
+    [1, '004', 'uaData.platform', 'auto'],
+    [1, '005', 'navigator.platform', 'auto'],
+    [1, '006', 'navigator.vendor', 'auto'],
+    [1, '007', 'navigator.appVersion', 'auto'],
+    [1, '008', 'navigator.product / Sub', 'auto'],
+    [1, '009', 'navigator.language', 'auto'],
+    [1, '010', 'navigator.languages', 'auto'],
+    [1, '011', 'navigator.webdriver (Bot)', 'leak'],
+    [1, '012', 'navigator.pdfViewerEnabled', 'auto'],
+    [1, '013', 'navigator.javaEnabled()', 'auto'],
+    [1, '014', 'navigator.cookieEnabled', 'auto'],
+    [1, '015', 'navigator.doNotTrack', 'auto'],
+    [1, '016', 'Global Privacy Control (GPC)', 'auto'],
 
-			reverseGeocode(location) {
-				this.geocoder.geocode({
-					location
-				}, (results, status) => {
-					if (status === 'OK') {
-						if (results[0]) {
-							document.getElementById('geoInfo').innerHTML = `<strong>Address:</strong> ${results[0].formatted_address}`;
-						} else {
-							document.getElementById('geoInfo').innerHTML = 'No address found for this location.';
-						}
-					} else {
-						document.getElementById('geoInfo').innerHTML = `Geocoding failed: ${status}`;
-					}
-				});
-			}
+    // 02: Hardware, CPU, Memory & Input (017-030)
+    [2, '017', 'hardwareConcurrency (Cores)', 'auto'],
+    [2, '018', 'deviceMemory (RAM Est.)', 'auto'],
+    [2, '019', 'maxTouchPoints', 'auto'],
+    [2, '020', 'Pointer Precision (Primary)', 'auto'],
+    [2, '021', 'Any-Pointer Capabilities', 'auto'],
+    [2, '022', 'Hover Capability', 'auto'],
+    [2, '023', 'JS Heap Size Limit', 'auto'],
+    [2, '024', 'JS Used / Total Heap', 'auto'],
+    [2, '025', 'CPU Math Benchmark (1M ops)', 'hash'],
+    [2, '026', 'Gamepad API Slots', 'auto'],
+    [2, '027', 'MediaDevices (Passive Enum)', 'leak'],
+    [2, '028', 'SpeechSynthesis Voices Hash', 'hash'],
+    [2, '029', 'WebAssembly / SharedArrayBuf', 'auto'],
+    [2, '030', 'Keyboard Layout Map Size', 'auto'],
 
-			getGeolocation() {
-				if (navigator.geolocation) {
-					navigator.geolocation.getCurrentPosition(
-						(position) => {
-							const lat = position.coords.latitude;
-							const lng = position.coords.longitude;
-							this.initMap(lat, lng);
-							document.getElementById('geoInfo').innerHTML = `<strong>Coordinates:</strong> Lat ${lat}, Lng ${lng}`;
-						},
-						(error) => {
-							document.getElementById('geoInfo').innerHTML = `Geolocation Error: ${error.message}`;
-						},
-						{
-							enableHighAccuracy: true, timeout: 10000, maximumAge: 0
-						}
-					);
-				} else {
-					document.getElementById('geoInfo').innerHTML = 'Geolocation is not supported by your browser.';
-				}
-			}
-		}
+    // 03: Display, Geometry & Media Queries (031-046)
+    [3, '031', 'screen.width x height', 'auto'],
+    [3, '032', 'screen.availWidth x Height', 'auto'],
+    [3, '033', 'screen.availLeft / availTop', 'leak'],
+    [3, '034', 'window.innerWidth x Height', 'auto'],
+    [3, '035', 'window.outerWidth x Height', 'auto'],
+    [3, '036', 'window.screenX x screenY', 'auto'],
+    [3, '037', 'window.devicePixelRatio', 'auto'],
+    [3, '038', 'screen.colorDepth / pixel', 'auto'],
+    [3, '039', 'screen.orientation', 'auto'],
+    [3, '040', 'Color Gamut (sRGB/P3/2020)', 'auto'],
+    [3, '041', 'Dynamic Range (HDR/SDR)', 'auto'],
+    [3, '042', 'prefers-color-scheme', 'auto'],
+    [3, '043', 'prefers-reduced-motion', 'auto'],
+    [3, '044', 'prefers-contrast', 'auto'],
+    [3, '045', 'forced-colors (High Contrast)', 'auto'],
+    [3, '046', 'inverted-colors', 'auto'],
 
-		// Initialize and fetch geolocation
-		const mapHandler = new MapHandler('AIzaSyAqVp90WuvdNXrtmT0gKY4TYS3D1A0iUPA');
-		mapHandler.getGeolocation();
-	</script>
+    // 04: Locale, Timezone & Timing Precision (047-056)
+    [4, '047', 'Intl TimeZone (IANA)', 'leak'],
+    [4, '048', 'Date.getTimezoneOffset()', 'auto'],
+    [4, '049', 'DST Offset Delta (Jan/Jul)', 'auto'],
+    [4, '050', 'Intl Calendar & Numbering', 'auto'],
+    [4, '051', 'Intl NumberFormat Signature', 'auto'],
+    [4, '052', 'Intl Collator Sort Hash', 'hash'],
+    [4, '053', 'Intl Plural/Relative Locale', 'auto'],
+    [4, '054', 'Date.toLocaleString() Raw', 'auto'],
+    [4, '055', 'performance.now() Granularity', 'hash'],
+    [4, '056', 'performance.timeOrigin', 'auto'],
 
+    // 05: Canvas, WebGL, Audio & Font Entropy (057-072)
+    [5, '057', '2D Canvas Geometry/Text Hash', 'hash'],
+    [5, '058', 'Canvas Unicode/Emoji Hash', 'hash'],
+    [5, '059', 'Canvas Winding Rule Check', 'auto'],
+    [5, '060', 'WebGL Unmasked Vendor', 'leak'],
+    [5, '061', 'WebGL Unmasked Renderer', 'leak'],
+    [5, '062', 'WebGL Version & GLSL', 'auto'],
+    [5, '063', 'WebGL Extensions Count/Hash', 'hash'],
+    [5, '064', 'WebGL Max Texture/Viewport', 'auto'],
+    [5, '065', 'WebGL Shader Float Precision', 'auto'],
+    [5, '066', 'WebGL2 & Color Attachments', 'auto'],
+    [5, '067', 'WebGPU (navigator.gpu)', 'auto'],
+    [5, '068', 'OfflineAudioContext Hash', 'hash'],
+    [5, '069', 'Audio SampleRate / Channels', 'auto'],
+    [5, '070', 'Installed Fonts Count & Hash', 'hash'],
+    [5, '071', 'JS Engine Math Float Hash', 'hash'],
+    [5, '072', 'DOMRect Subpixel Geometry', 'hash'],
 
+    // 06: Network, Protocol & WebRTC Leaks (073-084)
+    [6, '073', 'Public IP Address', 'leak'],
+    [6, '074', 'Geo-IP Org / ASN / Region', 'leak'],
+    [6, '075', 'WebRTC Local / mDNS Leak', 'leak'],
+    [6, '076', 'WebRTC STUN Public IP Leak', 'leak'],
+    [6, '077', 'navigator.onLine', 'auto'],
+    [6, '078', 'connection.effectiveType', 'auto'],
+    [6, '079', 'connection.downlink (Mbps)', 'auto'],
+    [6, '080', 'connection.rtt (Latency)', 'auto'],
+    [6, '081', 'connection.saveData', 'auto'],
+    [6, '082', 'HTTP Protocol (h2/h3/1.1)', 'auto'],
+    [6, '083', 'Nav Timing DNS/TCP/TLS ms', 'auto'],
+    [6, '084', 'WebSocket & WebTransport', 'auto'],
 
+    // 07: Storage, Incognito & Blocker Leaks (085-093)
+    [7, '085', 'localStorage Access & Keys', 'auto'],
+    [7, '086', 'sessionStorage Access & Keys', 'auto'],
+    [7, '087', 'IndexedDB & Databases()', 'auto'],
+    [7, '088', 'Cache Storage API Keys', 'auto'],
+    [7, '089', 'Storage Quota (Incognito Check)', 'leak'],
+    [7, '090', 'Storage Persisted Status', 'auto'],
+    [7, '091', 'Service Worker Registrations', 'auto'],
+    [7, '092', 'history.length (Tab Depth)', 'auto'],
+    [7, '093', 'AdBlocker DOM Bait Detection', 'auto'],
+
+    // 08: Battery, Permissions & Hardware Gates (094-100)
+    [8, '094', 'Battery Status & Level %', 'leak'],
+    [8, '095', 'Permissions API Passive Map', 'auto'],
+    [8, '096', 'Camera & Mic Stream Gate', 'gate'],
+    [8, '097', 'GPS Geolocation Coordinates', 'gate'],
+    [8, '098', 'Notifications Permission', 'gate'],
+    [8, '099', 'Clipboard Read Text Gate', 'gate'],
+    [8, '100', 'Motion / Orientation / BT', 'gate'],
+  ];
+
+  // Build skeleton DOM immediately
+  function initDOM() {
+    VECTORS.forEach(([sec, id, label, type]) => {
+      const container = document.getElementById(`sec-${sec}`);
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.search = `${id} ${label}`.toLowerCase();
+      row.innerHTML = `
+        <span class="idx">${id}</span>
+        <span class="key" title="${label}">${label}</span>
+        <span class="val" id="v-${id}">…</span>
+        <span class="tag t-${type}">${type}</span>
+      `;
+      row.onclick = () => {
+        const val = state[id] || '';
+        navigator.clipboard?.writeText(`${id} ${label}: ${val}`);
+        showToast(`Copied [${id}] ${label}`);
+      };
+      container.appendChild(row);
+      rowEls[id] = row;
+    });
+  }
+
+  function setVal(id, value) {
+    const str = (value === undefined || value === null || value === '') ? 'N/A' : String(value);
+    state[id] = str;
+    const el = document.getElementById(`v-${id}`);
+    if (el) {
+      el.textContent = str;
+      el.title = str;
+    }
+    if (rowEls[id]) {
+      rowEls[id].dataset.search = `${id} ${rowEls[id].querySelector('.key').textContent} ${str}`.toLowerCase();
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // Filter logic
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    Object.values(rowEls).forEach(row => {
+      row.classList.toggle('hidden', q && !row.dataset.search.includes(q));
+    });
+  });
+
+  // Safe mediaQuery helper
+  function mq(query) {
+    return window.matchMedia && window.matchMedia(query).matches;
+  }
+
+  async function runAutoProbes() {
+    // --- DOMAIN 1: Navigator & Privacy (001-016) ---
+    setVal('001', navigator.userAgent);
+    const uad = navigator.userAgentData;
+    setVal('002', uad?.brands ? uad.brands.map(b => `${b.brand}/${b.version}`).join(', ') : 'Unsupported');
+    setVal('003', uad ? String(uad.mobile) : 'Unsupported');
+    setVal('004', uad?.platform || 'Unsupported');
+    setVal('005', navigator.platform);
+    setVal('006', navigator.vendor);
+    setVal('007', navigator.appVersion);
+    setVal('008', `${navigator.product} / ${navigator.productSub || 'N/A'}`);
+    setVal('009', navigator.language);
+    setVal('010', navigator.languages ? navigator.languages.join(', ') : navigator.language);
+    setVal('011', navigator.webdriver ? 'TRUE (Automated)' : 'false');
+    setVal('012', String(navigator.pdfViewerEnabled));
+    setVal('013', typeof navigator.javaEnabled === 'function' ? String(navigator.javaEnabled()) : 'false');
+    setVal('014', String(navigator.cookieEnabled));
+    setVal('015', navigator.doNotTrack || window.doNotTrack || 'Unspecified');
+    setVal('016', navigator.globalPrivacyControl !== undefined ? String(navigator.globalPrivacyControl) : 'Not Sent');
+
+    // --- DOMAIN 2: Hardware, CPU & Input (017-030) ---
+    setVal('017', navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} logical cores` : 'Unknown');
+    setVal('018', navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Hidden/Unsupported');
+    setVal('019', String(navigator.maxTouchPoints ?? 0));
+    setVal('020', mq('(pointer:fine)') ? 'fine (Mouse/Trackpad)' : mq('(pointer:coarse)') ? 'coarse (Touch)' : 'none');
+    const anyPtr = ['fine', 'coarse', 'none'].filter(p => mq(`(any-pointer:${p})`)).join('+');
+    setVal('021', anyPtr || 'none');
+    setVal('022', mq('(hover:hover)') ? 'hover supported' : 'none');
+
+    const mem = performance.memory;
+    setVal('023', mem ? `${(mem.jsHeapSizeLimit / 1048576).toFixed(0)} MB` : 'Non-Chromium');
+    setVal('024', mem ? `${(mem.usedJSHeapSize / 1048576).toFixed(1)} / ${(mem.totalJSHeapSize / 1048576).toFixed(1)} MB` : 'Non-Chromium');
+
+    const t0 = performance.now();
+    let acc = 0;
+    for (let i = 1; i <= 1000000; i++) acc += Math.sqrt(i);
+    const t1 = performance.now();
+    setVal('025', `${(t1 - t0).toFixed(2)} ms (chk:${acc.toFixed(0).slice(-4)})`);
+
+    try {
+      const gps = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : [];
+      setVal('026', `${gps.length} connected`);
+    } catch { setVal('026', 'Blocked'); }
+
+    if (navigator.mediaDevices?.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then(devs => {
+        const counts = devs.reduce((a, d) => { a[d.kind] = (a[d.kind] || 0) + 1; return a; }, {});
+        const labeled = devs.some(d => d.label);
+        setVal('027', `${devs.length} devs (${JSON.stringify(counts)}) ${labeled ? '[LABELED]' : '[unlabeled]'}`);
+      }).catch(() => setVal('027', 'Blocked'));
+    } else {
+      setVal('027', 'Unsupported');
+    }
+
+    const readVoices = () => {
+      if (!window.speechSynthesis) return setVal('028', 'Unsupported');
+      const v = speechSynthesis.getVoices();
+      if (v.length) {
+        const sig = v.map(x => `${x.name}:${x.lang}`).join('|');
+        setVal('028', `${v.length} voices [${hash64(sig)}]`);
+      } else {
+        setVal('028', '0 voices (async pending)');
+      }
+    };
+    readVoices();
+    if (window.speechSynthesis) speechSynthesis.onvoiceschanged = readVoices;
+
+    setVal('029', `WASM:${typeof WebAssembly === 'object'} | SAB:${typeof SharedArrayBuffer === 'function'}`);
+
+    if (navigator.keyboard?.getLayoutMap) {
+      navigator.keyboard.getLayoutMap().then(map => {
+        setVal('030', `${map.size} keys (KeyQ=${map.get('KeyQ')}, KeyZ=${map.get('KeyZ')})`);
+      }).catch(() => setVal('030', 'Restricted'));
+    } else {
+      setVal('030', 'Unsupported');
+    }
+
+    // --- DOMAIN 3: Display, Geometry & Media Queries (031-046) ---
+    setVal('031', `${screen.width} x ${screen.height}`);
+    setVal('032', `${screen.availWidth} x ${screen.availHeight}`);
+    setVal('033', `left:${screen.availLeft ?? 0}, top:${screen.availTop ?? 0}`);
+    setVal('034', `${window.innerWidth} x ${window.innerHeight}`);
+    setVal('035', `${window.outerWidth} x ${window.outerHeight}`);
+    setVal('036', `X:${window.screenX}, Y:${window.screenY}`);
+    setVal('037', `${window.devicePixelRatio}x`);
+    setVal('038', `${screen.colorDepth}-bit / ${screen.pixelDepth}-bit`);
+    setVal('039', screen.orientation ? `${screen.orientation.type} (${screen.orientation.angle}°)` : 'N/A');
+    setVal('040', mq('(color-gamut:rec2020)') ? 'rec2020' : mq('(color-gamut:p3)') ? 'display-p3' : mq('(color-gamut:srgb)') ? 'srgb' : 'unknown');
+    setVal('041', mq('(dynamic-range:high)') ? 'high (HDR)' : 'standard (SDR)');
+    setVal('042', mq('(prefers-color-scheme:dark)') ? 'dark' : mq('(prefers-color-scheme:light)') ? 'light' : 'no-preference');
+    setVal('043', mq('(prefers-reduced-motion:reduce)') ? 'reduce' : 'no-preference');
+    setVal('044', mq('(prefers-contrast:more)') ? 'more' : mq('(prefers-contrast:less)') ? 'less' : 'no-preference');
+    setVal('045', mq('(forced-colors:active)') ? 'active' : 'none');
+    setVal('046', mq('(inverted-colors:inverted)') ? 'inverted' : 'none');
+
+    // --- DOMAIN 4: Locale, Timezone & Timing Precision (047-056) ---
+    const dtf = Intl.DateTimeFormat().resolvedOptions();
+    setVal('047', dtf.timeZone);
+    setVal('048', `${new Date().getTimezoneOffset()} min`);
+    const jan = new Date(2026, 0, 1).getTimezoneOffset();
+    const jul = new Date(2026, 6, 1).getTimezoneOffset();
+    setVal('049', `Jan:${jan} / Jul:${jul} (Δ${Math.abs(jan - jul)}m)`);
+    setVal('050', `cal:${dtf.calendar}, num:${dtf.numberingSystem}`);
+    setVal('051', (1234567.89).toLocaleString());
+    const sampleWords = ['ä', 'a', 'z', 'ž', 'å', 'ö', 'ß', 'é'];
+    setVal('052', hash64([...sampleWords].sort(new Intl.Collator().compare).join(',')));
+    setVal('053', `plural:${new Intl.PluralRules().resolvedOptions().pluralCategories.join('/')}`);
+    setVal('054', new Date(1700000000000).toLocaleString());
+
+    // Timer granularity check
+    const deltas = [];
+    let prev = performance.now();
+    for (let i = 0; i < 30; i++) {
+      const cur = performance.now();
+      if (cur !== prev) { deltas.push(cur - prev); prev = cur; }
+    }
+    const minDelta = deltas.length ? Math.min(...deltas) : 0;
+    setVal('055', `min Δ ${minDelta.toFixed(4)} ms (${minDelta >= 1 ? 'Coarsened/Anti-FP' : 'Sub-ms High-Res'})`);
+    setVal('056', `${Math.round(performance.timeOrigin)} (${new Date(performance.timeOrigin).toISOString()})`);
+
+    // --- DOMAIN 5: Canvas, WebGL, Audio & Font Entropy (057-072) ---
+    const prevCanvas = document.getElementById('canvasPreview');
+    const pctx = prevCanvas.getContext('2d');
+    pctx.fillStyle = '#0f172a';
+    pctx.fillRect(0, 0, 160, 24);
+    pctx.textBaseline = 'alphabetic';
+    pctx.fillStyle = '#f59e0b';
+    pctx.fillRect(92, 3, 62, 18);
+    pctx.font = '13px Arial, sans-serif';
+    pctx.fillStyle = '#38bdf8';
+    pctx.fillText('FP-Matrix!@#9', 4, 17);
+    pctx.strokeStyle = 'rgba(16,185,129,0.85)';
+    pctx.beginPath();
+    pctx.arc(125, 12, 9, 0, Math.PI * 1.65);
+    pctx.stroke();
+    setVal('057', hash64(prevCanvas.toDataURL()));
+
+    // Emoji/Unicode canvas hash (058)
+    const eCan = document.createElement('canvas');
+    eCan.width = 60; eCan.height = 30;
+    const eCtx = eCan.getContext('2d');
+    eCtx.font = '20px sans-serif';
+    eCtx.fillText('🕵️🧬🚀', 2, 22);
+    setVal('058', hash64(eCan.toDataURL()));
+
+    // Winding rule (059)
+    eCtx.beginPath();
+    eCtx.rect(0, 0, 10, 10);
+    eCtx.rect(2, 2, 6, 6);
+    setVal('059', `evenodd:${eCtx.isPointInPath(5, 5, 'evenodd')}`);
+
+    // WebGL (060-066)
+    const glCan = document.createElement('canvas');
+    const gl = glCan.getContext('webgl') || glCan.getContext('experimental-webgl');
+    if (gl) {
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      setVal('060', dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR));
+      setVal('061', dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+      setVal('062', `${gl.getParameter(gl.VERSION)} | ${gl.getParameter(gl.SHADING_LANGUAGE_VERSION)}`);
+      const exts = gl.getSupportedExtensions() || [];
+      setVal('063', `${exts.length} exts [${hash64(exts.join(','))}]`);
+      const vp = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+      setVal('064', `Tex:${gl.getParameter(gl.MAX_TEXTURE_SIZE)} | VP:${vp[0]}x${vp[1]}`);
+      const prec = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
+      setVal('065', prec ? `range:[${prec.rangeMin},${prec.rangeMax}] prec:${prec.precision}` : 'N/A');
+    } else {
+      ['060','061','062','063','064','065'].forEach(id => setVal(id, 'WebGL Disabled'));
+    }
+
+    const gl2 = document.createElement('canvas').getContext('webgl2');
+    setVal('066', gl2 ? `Supported (MaxColorAttach:${gl2.getParameter(gl2.MAX_COLOR_ATTACHMENTS)})` : 'Unsupported');
+    setVal('067', navigator.gpu ? 'Available (navigator.gpu)' : 'Unsupported');
+
+    // Silent OfflineAudioContext Hash (068-069)
+    try {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (OAC) {
+        const ctx = new OAC(1, 44100, 44100);
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(10000, 0);
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.setValueAtTime(-50, 0);
+        comp.knee.setValueAtTime(40, 0);
+        comp.ratio.setValueAtTime(12, 0);
+        comp.attack.setValueAtTime(0, 0);
+        comp.release.setValueAtTime(0.25, 0);
+        osc.connect(comp);
+        comp.connect(ctx.destination);
+        osc.start(0);
+        ctx.startRendering().then(buf => {
+          const data = buf.getChannelData(0);
+          let sliceStr = '';
+          for (let i = 4500; i < 5000; i++) sliceStr += data[i].toFixed(7);
+          setVal('068', hash64(sliceStr));
+          setVal('069', `${ctx.sampleRate} Hz / ${buf.numberOfChannels} ch`);
+        });
+      } else {
+        setVal('068', 'Unsupported'); setVal('069', 'Unsupported');
+      }
+    } catch (e) { setVal('068', 'Blocked'); setVal('069', 'Blocked'); }
+
+    // Font Enumeration via Canvas TextMetrics (070)
+    const testFonts = [
+      'Arial','Arial Black','Calibri','Cambria','Comic Sans MS','Consolas','Courier New',
+      'Georgia','Helvetica','Helvetica Neue','Impact','Lucida Console','Menlo','Monaco',
+      'Palatino','Segoe UI','Tahoma','Times New Roman','Trebuchet MS','Verdana',
+      'Fira Code','JetBrains Mono','Roboto','Ubuntu','SF Pro Display','Apple Color Emoji',
+      'MS Gothic','SimSun','Noto Sans','DejaVu Sans','Liberation Sans','Cantarell'
+    ];
+    const fCtx = document.createElement('canvas').getContext('2d');
+    const baseFonts = ['monospace', 'sans-serif', 'serif'];
+    const sample = 'mmmmmmmmmmlliWWWM@#123';
+    const baseWidths = {};
+    baseFonts.forEach(bf => { fCtx.font = `72px ${bf}`; baseWidths[bf] = fCtx.measureText(sample).width; });
+    const detectedFonts = testFonts.filter(font => {
+      return baseFonts.some(bf => {
+        fCtx.font = `72px "${font}", ${bf}`;
+        return fCtx.measureText(sample).width !== baseWidths[bf];
+      });
+    });
+    setVal('070', `${detectedFonts.length}/${testFonts.length} [${hash64(detectedFonts.join(','))}]`);
+
+    // Engine Math Fingerprint (071)
+    const mathSig = [
+      Math.tan(-1e300), Math.sinh(1), Math.cosh(1), Math.tanh(1),
+      Math.acos(0.123456789), Math.asin(0.123456789), Math.atan(2),
+      Math.expm1(1), Math.log1p(10), Math.cbrt(100)
+    ].join('|');
+    setVal('071', hash64(mathSig));
+
+    // DOMRect Subpixel Geometry (072)
+    const rectDiv = document.createElement('div');
+    rectDiv.style.cssText = 'position:absolute;left:-9999px;width:33.3333%;font-size:13.7px;transform:rotate(1.13deg);';
+    rectDiv.textContent = 'Subpixel Rect Probe 072';
+    document.body.appendChild(rectDiv);
+    const r = rectDiv.getBoundingClientRect();
+    document.body.removeChild(rectDiv);
+    setVal('072', hash64(`${r.width}:${r.height}:${r.x}:${r.y}`));
+
+    // --- DOMAIN 6: Network, Protocol & WebRTC Leaks (073-084) ---
+    setVal('077', String(navigator.onLine));
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    setVal('078', conn?.effectiveType || 'Unsupported');
+    setVal('079', conn?.downlink !== undefined ? `${conn.downlink} Mbps` : 'Unsupported');
+    setVal('080', conn?.rtt !== undefined ? `${conn.rtt} ms` : 'Unsupported');
+    setVal('081', conn?.saveData !== undefined ? String(conn.saveData) : 'Unsupported');
+
+    const navEntry = performance.getEntriesByType?.('navigation')?.[0];
+    setVal('082', navEntry?.nextHopProtocol || (location.protocol === 'file:' ? 'file:// (local)' : 'Unknown'));
+    if (navEntry) {
+      const dns = Math.max(0, navEntry.domainLookupEnd - navEntry.domainLookupStart).toFixed(1);
+      const tcp = Math.max(0, navEntry.connectEnd - navEntry.connectStart).toFixed(1);
+      const tls = navEntry.secureConnectionStart > 0 ? Math.max(0, navEntry.connectEnd - navEntry.secureConnectionStart).toFixed(1) : '0';
+      setVal('083', `DNS:${dns}ms | TCP:${tcp}ms | TLS:${tls}ms`);
+    } else {
+      setVal('083', 'Unavailable');
+    }
+    setVal('084', `WS:${typeof WebSocket === 'function'} | WebTransport:${typeof WebTransport === 'function'}`);
+
+    // Public IP & ASN passive lookup (073-074)
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(d => {
+        setVal('073', d.ip || 'Unknown');
+        setVal('074', `${d.org || d.asn || 'N/A'} (${d.city || ''}, ${d.country_code || ''})`);
+      })
+      .catch(() => {
+        fetch('https://api.ipify.org?format=json')
+          .then(r => r.json())
+          .then(d => { setVal('073', d.ip); setVal('074', 'Geo-IP endpoint blocked'); })
+          .catch(() => { setVal('073', 'Offline / Blocked'); setVal('074', 'Offline / Blocked'); });
+      });
+
+    // WebRTC Local & STUN Leak (075-076)
+    try {
+      const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+      const hosts = new Set(), srflx = new Set();
+      pc.createDataChannel('probe');
+      pc.createOffer().then(o => pc.setLocalDescription(o));
+      pc.onicecandidate = (e) => {
+        if (!e?.candidate?.candidate) return;
+        const c = e.candidate.candidate;
+        const parts = c.split(' ');
+        const ip = parts[4];
+        if (c.includes('typ host')) hosts.add(ip);
+        if (c.includes('typ srflx')) srflx.add(ip);
+      };
+      setTimeout(() => {
+        pc.close();
+        setVal('075', hosts.size ? Array.from(hosts).join(', ') : 'Masked / None');
+        setVal('076', srflx.size ? Array.from(srflx).join(', ') : 'Blocked / No STUN');
+        updateMasterSignature();
+      }, 1400);
+    } catch (e) {
+      setVal('075', 'WebRTC Disabled'); setVal('076', 'WebRTC Disabled');
+    }
+
+    // --- DOMAIN 7: Storage, Incognito & Blocker Leaks (085-093) ---
+    try {
+      localStorage.setItem('_fp_t', '1'); localStorage.removeItem('_fp_t');
+      setVal('085', `Writable (${localStorage.length} keys)`);
+    } catch { setVal('085', 'Blocked'); }
+
+    try {
+      sessionStorage.setItem('_fp_t', '1'); sessionStorage.removeItem('_fp_t');
+      setVal('086', `Writable (${sessionStorage.length} keys)`);
+    } catch { setVal('086', 'Blocked'); }
+
+    if (window.indexedDB) {
+      if (indexedDB.databases) {
+        indexedDB.databases().then(dbs => setVal('087', `Supported (${dbs.length} DBs)`)).catch(() => setVal('087', 'Supported (enum blocked)'));
+      } else {
+        setVal('087', 'Supported');
+      }
+    } else { setVal('087', 'Blocked/Unsupported'); }
+
+    if (window.caches) {
+      caches.keys().then(k => setVal('088', `Supported (${k.length} caches)`)).catch(() => setVal('088', 'Blocked'));
+    } else { setVal('088', 'Unavailable (Insecure/Blocked)'); }
+
+    if (navigator.storage?.estimate) {
+      navigator.storage.estimate().then(est => {
+        const gb = (est.quota / 1073741824).toFixed(2);
+        const mb = (est.usage / 1048576).toFixed(2);
+        const hint = est.quota < 2147483648 ? ' [LOW QUOTA -> LIKELY INCOGNITO]' : ' [Standard Quota]';
+        setVal('089', `${mb}MB / ${gb}GB${hint}`);
+      }).catch(() => setVal('089', 'Blocked'));
+    } else { setVal('089', 'Unsupported'); }
+
+    if (navigator.storage?.persisted) {
+      navigator.storage.persisted().then(p => setVal('090', String(p))).catch(() => setVal('090', 'N/A'));
+    } else { setVal('090', 'Unsupported'); }
+
+    if (navigator.serviceWorker?.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(r => setVal('091', `${r.length} active SWs`)).catch(() => setVal('091', 'Blocked'));
+    } else { setVal('091', 'Unavailable'); }
+
+    setVal('092', `${history.length} entries`);
+
+    setTimeout(() => {
+      const bait = document.getElementById('ad-bait');
+      const blocked = !bait || bait.offsetHeight === 0 || getComputedStyle(bait).display === 'none';
+      setVal('093', blocked ? 'ACTIVE (Bait element collapsed)' : 'None detected');
+    }, 120);
+
+    // --- DOMAIN 8: Battery, Permissions & Hardware Gates (094-100) ---
+    if (navigator.getBattery) {
+      navigator.getBattery().then(b => {
+        setVal('094', `${(b.level * 100).toFixed(0)}% | ${b.charging ? 'Charging' : 'Discharging'} | chgT:${b.chargingTime}s`);
+      }).catch(() => setVal('094', 'Blocked'));
+    } else {
+      setVal('094', 'Unsupported (Firefox/Safari)');
+    }
+
+    // Passive Permissions API map (095)
+    if (navigator.permissions?.query) {
+      const names = ['geolocation', 'notifications', 'camera', 'microphone', 'clipboard-read'];
+      Promise.all(names.map(name =>
+        navigator.permissions.query({ name }).then(s => `${name.slice(0,4)}:${s.state}`).catch(() => `${name.slice(0,4)}:n/a`)
+      )).then(res => setVal('095', res.join(' | ')));
+    } else {
+      setVal('095', 'Permissions API Unsupported');
+    }
+
+    // Initialize placeholders for 096-100 & attach passive motion listener
+    setVal('096', 'Awaiting user gesture [Click 096]');
+    setVal('097', 'Awaiting user gesture [Click 097]');
+    setVal('098', typeof Notification !== 'undefined' ? `Current: ${Notification.permission} [Click 098]` : 'Unsupported');
+    setVal('099', 'Awaiting user gesture [Click 099]');
+    setVal('100', `BT:${'bluetooth' in navigator} | Gyro:${'DeviceOrientationEvent' in window} [Click 100]`);
+
+    window.addEventListener('deviceorientation', (e) => {
+      if (e.alpha !== null) {
+        setVal('100', `α:${e.alpha.toFixed(1)}° β:${e.beta.toFixed(1)}° γ:${e.gamma.toFixed(1)}°`);
+      }
+    }, { once: true });
+
+    updateMasterSignature();
+  }
+
+  function updateMasterSignature() {
+    const coreKeys = ['001','005','017','018','028','031','037','047','057','061','068','070','071','072'];
+    const combined = coreKeys.map(k => state[k] || '').join('||');
+    const fpId = hash64(combined).toUpperCase();
+    document.getElementById('masterHash').textContent = `FP-ID: ${fpId}`;
+
+    // Calculate exposure % based on exposed high-entropy vectors
+    let exposed = 68;
+    if (state['061'] && !state['061'].includes('Disabled')) exposed += 8;
+    if (state['073'] && !state['073'].includes('Blocked')) exposed += 7;
+    if (state['075'] && !state['075'].includes('Masked')) exposed += 6;
+    if (state['094'] && !state['094'].includes('Unsupported')) exposed += 4;
+    if (state['016'] === 'Not Sent') exposed += 4;
+    document.getElementById('entropyScore').textContent = `EXPOSURE: ${Math.min(99, exposed)}%`;
+  }
+
+  // Interactive / Chained Triggers (096-100)
+  window.Probe = {
+    fire096: async () => {
+      setVal('096', 'Requesting Camera & Mic...');
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setVal('096', `GRANTED (${s.getTracks().map(t => t.label || t.kind).join(', ')})`);
+        s.getTracks().forEach(t => t.stop());
+      } catch (e) { setVal('096', `Denied/Err: ${e.name}`); }
+    },
+    fire097: () => new Promise((resolve) => {
+      setVal('097', 'Requesting GPS...');
+      if (!navigator.geolocation) { setVal('097', 'Unsupported'); return resolve(); }
+      navigator.geolocation.getCurrentPosition(
+        p => { setVal('097', `${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)} (±${p.coords.accuracy.toFixed(0)}m)`); resolve(); },
+        e => { setVal('097', `Denied/Err: ${e.message}`); resolve(); },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }),
+    fire098: async () => {
+      if (typeof Notification === 'undefined') return setVal('098', 'Unsupported');
+      setVal('098', 'Requesting Notifications...');
+      const res = await Notification.requestPermission();
+      setVal('098', `Permission: ${res}`);
+    },
+    fire099: async () => {
+      setVal('099', 'Requesting Clipboard Read...');
+      try {
+        const txt = await navigator.clipboard.readText();
+        setVal('099', `GRANTED (${txt.length} chars read)`);
+      } catch (e) { setVal('099', `Denied/Err: ${e.name}`); }
+    },
+    fire100: async () => {
+      if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+        try {
+          const p = await DeviceOrientationEvent.requestPermission();
+          setVal('100', `iOS Motion: ${p}`);
+        } catch (e) { setVal('100', `Motion Err: ${e.name}`); }
+      }
+      if (navigator.bluetooth?.requestDevice) {
+        try {
+          const dev = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+          setVal('100', `BT Device: ${dev.name || dev.id}`);
+        } catch (e) { setVal('100', `BT Prompt Result: ${e.name}`); }
+      }
+    },
+    chainInteractive: async () => {
+      const btn = document.getElementById('chainBtn');
+      btn.textContent = '⏳ Chaining 098 → 097 → 096 → 099 → 100...';
+      await Probe.fire098();
+      await Probe.fire097();
+      await Probe.fire096();
+      await Probe.fire099();
+      await Probe.fire100();
+      btn.textContent = '✅ Chain Complete (096–100)';
+    },
+    copyJSON: () => {
+      const report = {
+        masterFingerprintId: document.getElementById('masterHash').textContent,
+        timestamp: new Date().toISOString(),
+        vectors: state
+      };
+      navigator.clipboard?.writeText(JSON.stringify(report, null, 2));
+      showToast('Copied full 100-vector JSON report!');
+    }
+  };
+
+  initDOM();
+  runAutoProbes();
+})();
+</script>
 	<script>
-		class DeviceFingerprinter {
-			constructor() {
-				this.errors = [];
-				this.warnings = [];
-				this.map = null;
-			}
+(() => {
+  // Add a live FingerprintJS badge to the top header bar
+  const brand = document.querySelector('.brand');
+  const badge = document.createElement('span');
+  badge.className = 'fp-badge';
+  badge.id = 'fpjsHash';
+  badge.style.cssText = 'color:#d8b4fe;border-color:rgba(168,85,247,0.35);background:rgba(168,85,247,0.12);cursor:pointer;';
+  badge.textContent = 'FPJS: LOADING...';
+  if (brand) brand.appendChild(badge);
 
-			logError(message) {
-				console.error(message);
-				this.errors.push(message);
-				document.getElementById('errorContainer').innerHTML += `<p>${message}</p>`;
-			}
+  // Add a matching row to Section 01
+  const sec1 = document.getElementById('sec-1');
+  let valEl = null;
+  if (sec1) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.search = 'fpjs fingerprintjs visitorid';
+    row.innerHTML = `
+      <span class="idx">FPJS</span>
+      <span class="key" title="FingerprintJS v4 Visitor ID">FingerprintJS v4 Visitor ID</span>
+      <span class="val" id="v-fpjs">Loading…</span>
+      <span class="tag t-hash">hash</span>
+    `;
+    row.onclick = () => {
+      if (valEl?.textContent) navigator.clipboard?.writeText(`FingerprintJS VisitorID: ${valEl.textContent}`);
+    };
+    sec1.prepend(row);
+    valEl = document.getElementById('v-fpjs');
+  }
 
-			logWarning(message) {
-				console.warn(message);
-				this.warnings.push(message);
-				document.getElementById('warningContainer').innerHTML += `<p>${message}</p>`;
-			}
-
-			async getNetworkInfo() {
-				const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-				return {
-					connectionType: connection?.type || 'Unknown',
-					effectiveBandwidth: connection?.downlink ? `${connection.downlink} Mbps`: 'N/A',
-					roundTripTime: connection?.rtt ? `${connection.rtt} ms`: 'N/A',
-					saveMode: connection?.saveData ? 'Enabled': 'Disabled'
-				};
-			}
-
-			getDeviceSignature() {
-				const parser = new UAParser();
-				const result = parser.getResult();
-				return {
-					browser: {
-						name: result.browser.name,
-						version: result.browser.version,
-						major: result.browser.major
-					},
-					device: {
-						model: result.device.model || 'Unknown',
-						type: result.device.type || 'Unknown',
-						vendor: result.device.vendor || 'Unknown'
-					},
-					os: {
-						name: result.os.name,
-						version: result.os.version
-					},
-					system: {
-						architecture: result.cpu.architecture || 'Unknown',
-						screenResolution: `${window.screen.width}x${window.screen.height}`,
-						colorDepth: window.screen.colorDepth,
-						pixelRatio: window.devicePixelRatio,
-						memoryEstimate: navigator.deviceMemory ? `${navigator.deviceMemory} GB`: 'N/A'
-					}
-				};
-			}
-
-			async getGeolocation() {
-				return new Promise((resolve) => {
-					if (!navigator.geolocation) {
-						this.logWarning('Geolocation not supported');
-						resolve(null);
-						return;
-					}
-					navigator.geolocation.getCurrentPosition(
-						(position) => resolve( {
-							latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy
-						}),
-						(error) => {
-							this.logError(`Geolocation Error: ${error.message}`); resolve(null);
-						},
-						{
-							enableHighAccuracy: true, timeout: 5000, maximumAge: 0
-						}
-					);
-				});
-			}
-
-
-
-
-			async getBatteryInfo() {
-				try {
-					const battery = await navigator.getBattery();
-					return {
-						charging: battery.charging, batteryLevel: `${(battery.level * 100).toFixed(2)}%`, chargingTime: battery.chargingTime === Infinity ? 'Fully Charged': `${battery.chargingTime} seconds`, dischargingTime: battery.dischargingTime === Infinity ? 'Plugged In': `${battery.dischargingTime} seconds`
-					};
-				} catch (error) {
-					this.logError('Battery Metrics Error: ' + error.message); return null;
-				}
-			}
-
-			getSensorCapabilities() {
-				return {
-					sensors: {
-						accelerometer: 'accelerometer' in window, gyroscope: 'gyroscope' in window, magnetometer: 'magnetometer' in window, ambientLight: 'AmbientLightSensor' in window
-					}, hardware: {
-						hardwareConcurrency: navigator.hardwareConcurrency || 'Unknown', maxTouchPoints: navigator.maxTouchPoints
-					}
-				};
-			}
-
-			async generateBrowserEcosystemFingerprint() {
-				return new Promise((resolve) => {
-					Fingerprint2.get(components => resolve( {
-						fingerprintHash: Fingerprint2.x64hash128(components.map(pair => pair.value).join(), 31), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, languages: navigator.languages, cookiesEnabled: navigator.cookieEnabled, doNotTrack: navigator.doNotTrack
-					}));
-				});
-			}
-
-			getAdvancedCharacteristics() {
-				return {
-					userAgent: navigator.userAgent, platform: navigator.platform, vendor: navigator.vendor
-				};
-			}
-
-			async collectFingerprint() {
-				try {
-					const geolocation = await this.getGeolocation();
-					this.updateDOMWithFingerprint({
-						network: await this.getNetworkInfo(),
-						device: this.getDeviceSignature(),
-						battery: await this.getBatteryInfo(),
-						sensors: this.getSensorCapabilities(),
-						browser: await this.generateBrowserEcosystemFingerprint(),
-						geolocation,
-						advanced: this.getAdvancedCharacteristics()
-					});
-					if (geolocation) {
-						this.renderMap(geolocation);
-					}
-				} catch (error) {
-					this.logError('Fingerprint Collection Error: ' + error.message);
-				}
-			}
-
-			updateDOMWithFingerprint(data) {
-				document.getElementById('networkInfo').textContent = JSON.stringify(data.network, null, 2);
-				document.getElementById('deviceInfo').textContent = JSON.stringify(data.device, null, 2);
-				document.getElementById('batteryInfo').textContent = JSON.stringify(data.battery, null, 2);
-				document.getElementById('sensorInfo').textContent = JSON.stringify(data.sensors, null, 2);
-				document.getElementById('browserEcosystem').textContent = JSON.stringify(data.browser, null, 2);
-				document.getElementById('geoLocation').textContent = JSON.stringify(data.geolocation, null, 2);
-				document.getElementById('advancedInfo').textContent = JSON.stringify(data.advanced, null, 2);
-			}
-		}
-
-		const fingerprintInstance = new DeviceFingerprinter();
-		window.onload = () => fingerprintInstance.collectFingerprint();
+  // Dynamically load FingerprintJS v4 and compute visitorId
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
+  s.onload = async () => {
+    try {
+      const fp = await window.FingerprintJS.load();
+      const result = await fp.get();
+      const conf = result.confidence?.score ? ` (${Math.round(result.confidence.score * 100)}% conf)` : '';
+      badge.textContent = `FPJS: ${result.visitorId}`;
+      badge.title = 'Click to copy FingerprintJS Visitor ID';
+      badge.onclick = () => navigator.clipboard?.writeText(result.visitorId);
+      if (valEl) {
+        valEl.textContent = `${result.visitorId}${conf}`;
+        valEl.title = `${result.visitorId}${conf}`;
+      }
+    } catch (err) {
+      badge.textContent = 'FPJS: ERROR';
+      if (valEl) valEl.textContent = err.message;
+    }
+  };
+  s.onerror = () => {
+    badge.textContent = 'FPJS: BLOCKED BY EXTENSION';
+    if (valEl) valEl.textContent = 'Blocked by AdBlocker / Privacy Extension';
+  };
+  document.head.appendChild(s);
+})();
 	</script>
+	
 </body>
 </html>
